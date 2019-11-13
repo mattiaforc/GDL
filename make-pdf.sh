@@ -1,0 +1,1 @@
+pandoc Notes/notes.md -o Notes/notes.pdf -V geometry:margin=1.5in
