@@ -1,3 +1,21 @@
+- [Graphs and graph theory](#graphs-and-graph-theory)
+- [Geometric Deep Learning](#geometric-deep-learning)
+  - [Graph embeddings](#graph-embeddings)
+  - [Non-Euclidean Spaces and Data](#non-euclidean-spaces-and-data)
+    - [Hyperbolic space embedding](#hyperbolic-space-embedding)
+  - [Geometric Deep Learning (GDL)](#geometric-deep-learning-gdl)
+    - [Graph Neural Networks](#graph-neural-networks)
+  - [Graphs Convolutions](#graphs-convolutions)
+    - [Spectral methods](#spectral-methods)
+      - [*ChebNets*](#chebnets)
+      - [*Graph Convolutional Networks (GCNs)*](#graph-convolutional-networks-gcns)
+      - [*FastGCN*](#fastgcn)
+    - [Spatial Graph Convolutional Networks](#spatial-graph-convolutional-networks)
+      - [*GraphSage*](#graphsage)
+    - [Recap](#recap)
+- [Convolutional Neural Networks](#convolutional-neural-networks)
+- [Graph Convolutional Network](#graph-convolutional-network)
+      - [TODO: Qui c'è da esplorare la GRAPH CONVOLUTION E GRAPH FOURIER TRANSFORM](#todo-qui-c%c3%a8-da-esplorare-la-graph-convolution-e-graph-fourier-transform)
 # Graphs and graph theory
 
 A set $V$ of vertices and a set $E$ of unordered and ordered pairs of vertices; denoted by $G(V,E)$. An unordered pair of vertices is said to be an **edge**, while an ordered pair is said to be an **arc**. A graph containing edges alone is said to be **non-oriented**; a graph containing arcs alone is said to be **oriented**. An arc (or edge) can begin and end at the same vertex, in which case it is known as a **loop**.
@@ -20,7 +38,9 @@ The **length** of an edge progression (chain, simple chain) is equal to the numb
 
 ## Graph embeddings
 
-Graph embeddings are the transformation of property graphs to a vector or a set of vectors. Embedding should capture the graph topology, vertex-to-vertex relationship, and other relevant information about graphs, subgraphs, and vertices.
+>Graph embeddings are the transformation of property graphs to a vector or a set of vectors. Embedding should capture the graph topology, vertex-to-vertex relationship, and other relevant information about graphs, subgraphs, and vertices.
+
+>Graph embedding techniques take graphs and embed them in a lower dimensional continuous latent space before passing that representation through a machine learning model.
 
 The **DeepWalk** method uses random walks to produce graph embeddings. The random walk starts in a selected node then we move to the random neighbor from a current node for a defined number of steps.
 The method basically consists of three steps:
@@ -82,6 +102,14 @@ GNNs not only embed structure, but also preserve semantic information that might
 
 ## Geometric Deep Learning (GDL)
 
+### Graph Neural Networks
+Graph neural networks (**GNNs**) **are deep learning based methods that operate on graph domain**.
+
+Based on CNNs and graph embedding, graph neural
+networks (GNNs) are proposed to **collectively aggregate information from graph structure**. Thus they can model input and/or output consisting of elements and their dependency.
+
+Firstly, the standard neural networks like CNNs and RNNs cannot handle the graph input properly in that they stackthe feature of nodes by a specific order. However, there isn’t a natural order of nodes in the graph. To present a graph completely, we should traverse all the possible orders as the input of the model like CNNs and RNNs, which is very redundant when computing. To solve this problem, **GNNs propagate on each node respectively, ignoring the input order of nodes**. In other words, **the output of GNNs is invariant for the input order of nodes**. Secondly, an edge in a graph represents the information of dependency between two nodes. In the standard neural networks, the dependency information is just regarded as the feature of nodes. However, GNNs can do propagation guided by the graph structure instead of using it as part of features. Generally, **GNNs update the hidden state of nodes by a weighted sum of the states of their neighborhood**. 
+
 Geometric Deep Learning is significant because it allows us to **take advantage of data with inherent relationships, connections, and shared properties**.
 
 -   In traditional Deep Learning, **dimensionality is directly correlated with the number of features in the data** whereas in Geometric Deep Learning, it refers to the **type of the data itself, not the number of features it has**.
@@ -90,6 +118,81 @@ Geometric Deep Learning is significant because it allows us to **take advantage 
 > "Graph convolutional networks are the best thing since sliced bread because they allow algos to analyze information in its native form rather than requiring an arbitrary representation of that same information in lower dimensional space which destroys the relationship between the data samples thus negating your conclusions." - Graham Ganssle, Head of Data Science at Expero
 
 [*What is Geometric Deep Learning?*](https://medium.com/@flawnsontong1/what-is-geometric-deep-learning-b2adb662d91d)
+
+## Graphs Convolutions
+### Spectral methods
+**GSP** (**Graph Signal Processing**) uses signal processing functions like the **fourier transform**, which is usually a tool reserved for signals/frequencies, and applies them to graphs. It is the graph fourier transform that allows one to introduce the notion of a *“bandwidth”* or *“smoothness”* to a graph. In the spatial sense of the term, smoothness just means how close the each value of a collection of things are, relative to each other.
+
+Analogous to **smooth time signals**, which have a narrow frequency band width, a graph that exhibits clustering properties will have a narrow band width in the GFT (signals vary less within clusters of highly interconnected nodes). In other words, **a clustered graph would be sparse in the frequency domain** allowing for a more efficient representation of the data (frequency, non-euclidean, and spectral domain mean the same thing).
+
+In GCNs, **node features and attributes are represented by “signals”**. We can then use concepts in signal processing to learn from the data. Usually, a signal isn’t just the node or edge feature taken as is, but rather **it’s a function that is applied to the feature**.
+
+**Convolutions can be computed in by finding the eigendecomposition of the graph Laplacian**. Eigendecomposition is a way of factoring a matrix into a set of eigenvectors and eigenvalues. This is also called spectral decompositoin, hence the name Spectral Graph Convolutional Networks. **Calculating the eigenvectors of the Laplacian, returns the Fourier basis for the graph**. Since the calculation is performed on the Laplacian, there will be as many eigenvectors as graph nodes. Directly solving a decomposition is intensive, hence many approaches opt to approximate the spectral decomposition instead.
+
+This [paper](https://arxiv.org/pdf/0912.3848.pdf) was the inspiration to many graph learning methods, some of them described below:
+
+#### [*ChebNets*](https://arxiv.org/pdf/1606.09375.pdf)
+Spectral convolutions are defined as the multiplication of a signal (node features/attributes) by a kernel. *This is similar to the way convolutions operate on an image, where a pixel value is multiplied by a kernel value*.
+
+**The kernel used in a spectral convolution made of Chebyshev polynomials of the diagonal matrix of Laplacian eigenvalues**. Chebyshev polynomials are a type of orthogonal polynomials with properties that make them very good at tasks like approximating functions. The kernel is represented by the equation:
+
+$$g_\theta(\Lambda)=\sum_{k=0}^{K-1}\theta_kT_k(\tilde\Lambda)$$
+
+Where $g_\theta$ is a **kernel** ($\theta$ represents the **vector of Chebyshev coefficients**) applied to $\Lambda$, the **diagonal matrix of Laplacian eigenvalues** ($\tilde\Lambda$ represents the **diagonal matrix of scaled Laplacian eigenvalues**). $k$ represents the **smallest order neighborhood**, and $K$ represents the **largest order neighborhood**. Finally, $T$ stands for the **Chebyshev polynomials of the kth order**.
+
+The kernel equals the sum of all Chebyshev polynomial kernels applied to the diagonal matrix of scaled Laplacian eigenvalues for each order of $k$ up to $K-1$.
+
+**First order simply means** that the metric used to determine the similarity between 2 nodes is based on the node’s immediate neighborhood. **Second order (and beyond)** means the metric used to determine similarity considers a node’s immediate neighborhood, but also the similarities between the neighborhood structures (with each increasing order, the depth of which nodes are considered increases).
+
+#### [*Graph Convolutional Networks (GCNs)*](https://arxiv.org/abs/1609.02907)
+The paper introduced spectral convolutions to graph learning, and was dubbed simply as “graph convolutional networks”, which is a bit misleading since it is classified as a spectral method and is by no means the origin of all subsequent works in graph learning.
+In Kipf and Welling’s GCN, a convolution is defined by:
+
+$$g_{\theta'}\star x \approx\sum_{k=0}^{K}{\theta'_k}T_k(\tilde L)x$$
+Where $g_\theta$ is a kernel ($\theta$ represents the parameters) which is applied (represented by the **star**) to $x$, a graph signal. $K$ stands for the number of nodes away from the target node to consider (the $Kth$ order neighborhood, with $k$ being the the closest order neighbor). $T$ denotes the Chebyshev polynomials as applied to $\tilde L$ which represents the equation:
+
+$$\tilde L = \frac{2}{\lambda_{max}}L-I_N$$
+
+Where $\lambda$ max denotes the largest eigenvalue of $L$, the normalized graph laplacian. Multiple convolutions can be performed on a graph, and the output is aggregated into $Z$.
+
+$$Z= \tilde D^{-\frac{1}{2}}\tilde A\tilde D^{-\frac{1}{2}}X\Theta$$
+
+Where $Z$ is a matrix of convolved signals (from neighboring nodes) $\tilde A$ is the adjacency matrix of the graph (plus the identity matrix), $\tilde D$ is the diagonal node degree from $\tilde A$, $\theta$ is a matrix of kernel/filter parameters (can be shared over the whole graph), and $X$ is a matrix of node feature vectors. The $D$ to the power of $-\frac{1}{2}$ are parts of a renormalization trick to avoid both exploding or vanishing gradients.
+Equation 1 and 3 are the the components that are wrapped in an activation function (Relu, Sigmoid, etc.). The combined result is the layer-wise propagation rule that makes up a single layer of a GCN.
+
+ChebNets and GCNs are very similar, but their largest difference is in their choices for value $K$ in eqn. 1. In a GCN, the layer wise convolution is limited to $K = 1$. This is intended to **alleviate the risk of overfitting** on a local neighborhood of a graph.
+
+At a high level, GCN uses the graph Fourier transform to **aggregate neighboring node features and attributes**. These features and attributes are represented as signals, which are component decompositions of the latent graph. This is analogous to how component frequencies are decompositions of a sound wave; component frequencies are node features (as signals), and the sound wave signal is a latent graph.
+
+GCNs performed well in node classification tasks and other graph applications, but the main drawback is how **eigenvalues tend to cluster together in a very small range**, with large gaps in between each cluster.
+
+#### [*FastGCN*](https://arxiv.org/abs/1606.09375)
+The biggest drawbacks to Spectral Convolutions is their tendency to be very computationally expensive. The kernel is defined in Fourier space and graph Fourier transforms are notoriously expensive to compute. It requires multiplication of node features with the eigenvector matrix of the graph Laplacian, which is a $O(N^2)$ operation for a graph with $N$ nodes.
+
+FastGCN was thus born out of the need for scalable spectral graph convolutions. The project essentially modified the original GCN architecture to be able to use **Monte Carlo** (biased random sampling method) approaches to consistently estimate the integrals, which allowed for **batch training**, reducing the overall training time.
+
+[*Graph Signal Processing*](https://arxiv.org/pdf/1712.00468.pdf)
+
+### Spatial Graph Convolutional Networks
+#### [*GraphSage*](https://arxiv.org/abs/1706.02216)
+The model is holds top-tier and remains competitive in terms of performance, even with newer or more powerful models. It is especially powerful because it scales well with large, dense, homogenous, dynamic networks.
+It has 3 steps:
+1.  **Neighborhood sampling**: Start by finding the immediate neighborhood of the target node in a graph. **The depth** $k$, **is defined by the user, and determines how many “neighbors of neighbors” will be sampled**. This is operation is performed recursively, for a set number of steps.
+2.  **Aggregation**: After each node in the graph has sampled its respective neighborhood, we must **bring together all the features of the neighborhood nodes to the target node**. The original paper proposed 3 aggregation functions:
+    1.  **Mean aggregation** — Averaging all the neighborhood node features (can be weighted average)
+    2.  **LSTM aggregation** — Using an LSTM cell to selectively aggregate neighborhood node features (ordered randomly)
+    3.  **Pooling aggregation** — Max pooling only takes the “highest” feature into consideration (performed the best in experiments)
+3. **Prediction**: The target node uses the aggregated neighborhood node features to make a prediction via neural network, which can be a task like node classification, or structure/context determination. This is where the learning happens. This 3 step process is repeated for every node in the graph in a **supervised manner**. A visual representation to the approach is shown below:  
+
+![](https://miro.medium.com/max/1248/1*5fXWlDFJhE1zlE-95ZnsJw.png)
+
+### Recap
+The purpose of graph convolutions is to **generalize the image convolution operation to graphs** so that we can achieve similar levels of performance and accuracy.
+
+-   **Spectral methods** attempt to use concepts like signals to represent node features, and operations like the Fourier transform to aggregate node information and make a prediction.
+-   **Spatial methods** use operations like message passing and representation methods like pseudo-coordinates to aggregate information between nodes and make a prediction.
+
+[*Graph Convolutional Networks for Geometric Deep Learning*](https://towardsdatascience.com/graph-convolutional-networks-for-geometric-deep-learning-1faf17dee008)
 
 # Convolutional Neural Networks
 
@@ -121,14 +224,6 @@ Successivamente, tra i vari livelli convoluzionali, esistono dei livelli di **Po
 [*Simple Introduction to Convolutional Neural Networks*](https://towardsdatascience.com/simple-introduction-to-convolutional-neural-networks-cdf8d3077bac)    
 [*Basics of the Classic CNN*](https://towardsdatascience.com/basics-of-the-classic-cnn-a3dce1225add)  
 [*Basic Overview of Convolutional Neural Network (CNN)*](https://medium.com/dataseries/basic-overview-of-convolutional-neural-network-cnn-4fcc7dbb4f17)
-
-# Graph Neural Networks
-Graph neural networks (**GNNs**) **are deep learning based methods that operate on graph domain**.
-
-Based on CNNs and graph embedding, graph neural
-networks (GNNs) are proposed to **collectively aggregate information from graph structure**. Thus they can model input and/or output consisting of elements and their dependency.
-
-Firstly, the standard neural networks like CNNs and RNNs cannot handle the graph input properly in that they stackthe feature of nodes by a specific order. However, there isn’t a natural order of nodes in the graph. To present a graph completely, we should traverse all the possible orders as the input of the model like CNNs and RNNs, which is very redundant when computing. To solve this problem, **GNNs propagate on each node respectively, ignoring the input order of nodes**. In other words, **the output of GNNs is invariant for the input order of nodes**. Secondly, an edge in a graph represents the information of dependency between two nodes. In the standard neural networks, the dependency information is just regarded as the feature of nodes. However, GNNs can do propagation guided by the graph structure instead of using it as part of features. Generally, **GNNs update the hidden state of nodes by a weighted sum of the states of their neighborhood**. 
 
 # Graph Convolutional Network
 Il punto di forza delle CNN e delle RNN è la loro capacità di saper sfruttare al meglio la conoscenza delle interconnessioni fra i dati in input. Ad esempio un filtro convolutivo si basa sul fatto che i dati necessari ad elaborare un singolo pixel (per estrarne una feature) si trovino nei pixel a lui vicini (tipicamente, a due o tre pixel di distanza), mentre i pixel più distanti possano essere ignorati. Da qui si può evidenziare come dietro questo concetto vi sia un grafo, in quanto la *vicinanza* dei pixel equivale a rappresentare l'immagine come un grafo dalla struttura perfettamente regolare:
