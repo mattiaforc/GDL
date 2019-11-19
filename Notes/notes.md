@@ -1,17 +1,19 @@
 - [Graphs and graph theory](#graphs-and-graph-theory)
 - [Geometric Deep Learning](#geometric-deep-learning)
   - [Graph embeddings](#graph-embeddings)
-  - [Non-Euclidean Spaces and Data](#non-euclidean-spaces-and-data)
+    - [Non-Euclidean Spaces and Data](#non-euclidean-spaces-and-data)
     - [Hyperbolic space embedding](#hyperbolic-space-embedding)
-  - [Geometric Deep Learning (GDL)](#geometric-deep-learning-gdl)
-    - [Graph Neural Networks](#graph-neural-networks)
-  - [Graphs Convolutions](#graphs-convolutions)
+  - [Graph Neural Networks](#graph-neural-networks)
+  - [Graph Convolutions](#graph-convolutions)
     - [Spectral methods](#spectral-methods)
       - [*ChebNets*](#chebnets)
       - [*Graph Convolutional Networks (GCNs)*](#graph-convolutional-networks-gcns)
       - [*FastGCN*](#fastgcn)
     - [Spatial Graph Convolutional Networks](#spatial-graph-convolutional-networks)
       - [*GraphSage*](#graphsage)
+    - [Readout operations](#readout-operations)
+      - [Statistics](#statistics)
+      - [Hierarchical clustering](#hierarchical-clustering)
     - [Recap](#recap)
 - [Convolutional Neural Networks](#convolutional-neural-networks)
 - [Graph Convolutional Network](#graph-convolutional-network)
@@ -68,7 +70,7 @@ The total loss of the network is calculated as a sum of the losses from the left
 
 [*Graph Embeddings — The Summary*](https://towardsdatascience.com/graph-embeddings-the-summary-cc6075aba007)
 
-## Non-Euclidean Spaces and Data
+### Non-Euclidean Spaces and Data
 
 The vast majority of deep learning is performed on Euclidean data (i.e. Images, text, audio, etc...) and the core object is the vector, or, alternatively, its multidimensional generalization, the tensor.
 **Non-euclidean data can represent more complex items and concepts** with more accuracy than 1D or 2D representation (i.e. graphs or manifolds). This means we are working with an euclidean space with all of its inherent properties, among the **most critical of which is its flatness**.
@@ -100,9 +102,7 @@ GNNs not only embed structure, but also preserve semantic information that might
 [Hyperbolic Embeddings with a Hopefully Right Amount of Hyperbole](https://dawn.cs.stanford.edu/2018/03/19/hyperbolics/)  
 [Into the Wild: Machine Learning In Non-Euclidean Spaces](https://dawn.cs.stanford.edu/2019/10/10/noneuclidean/)
 
-## Geometric Deep Learning (GDL)
-
-### Graph Neural Networks
+## Graph Neural Networks
 Graph neural networks (**GNNs**) **are deep learning based methods that operate on graph domain**.
 
 Based on CNNs and graph embedding, graph neural
@@ -119,7 +119,34 @@ Geometric Deep Learning is significant because it allows us to **take advantage 
 
 [*What is Geometric Deep Learning?*](https://medium.com/@flawnsontong1/what-is-geometric-deep-learning-b2adb662d91d)
 
-## Graphs Convolutions
+|Category | Basic Assumptions/Aims | Main Functions|
+|-|-|-|
+Graph Recurrent Neural Networks | Recursive and sequential patterns of graphs | Definition of states for nodes or graphs
+Graph Convolutional Networks | Common local and global structural patterns of graphs | Graph convolution and readout operations
+Graph Autoencoders | Low-rank structures of graphs | Unsupervised node representation learning
+Graph Reinforcement Learning | Feedbacks and constraints of graph tasks | Graph-based actions and rewards
+Graph Adversarial Methods | The generalization ability and robustness of graph models | Graph adversarial training and attacks
+
+
+|Notations |Meaning | 
+|-| -|
+$G = (V, E)$ | A graph
+$N, M$ | The number of nodes and edges
+$V = {v_1, ..., v_N}$ | The set of nodes
+$F^V , F^E$ | Attributes/features for nodes and edges
+$A$ | The adjacency matrix
+$D(i, i) = \sum_j A(i, j)$ | The diagonal degree matrix
+$L = D - A$ | The Laplacian matrix
+$Q\Lambda Q^T = L$ | The eigen-decomposition of $L$
+$P = D^{-1}A$ | The transition matrix
+$N_k(i), N(i)$ | The k-step and 1-step neighbors of $v_i$
+$H^l$ | The hidden representation in the $l$-th layer
+$f_l$ | The number of dimensions of Hl
+$\rho(\cdot)$ |  Some non-linear activation
+$X1\bigodot X2$ |  Element-wise multiplication
+$\Theta$ | Learnable parameters
+
+## Graph Convolutions
 ### Spectral methods
 **GSP** (**Graph Signal Processing**) uses signal processing functions like the **fourier transform**, which is usually a tool reserved for signals/frequencies, and applies them to graphs. It is the graph fourier transform that allows one to introduce the notion of a *“bandwidth”* or *“smoothness”* to a graph. In the spatial sense of the term, smoothness just means how close the each value of a collection of things are, relative to each other.
 
@@ -185,6 +212,38 @@ It has 3 steps:
 3. **Prediction**: The target node uses the aggregated neighborhood node features to make a prediction via neural network, which can be a task like node classification, or structure/context determination. This is where the learning happens. This 3 step process is repeated for every node in the graph in a **supervised manner**. A visual representation to the approach is shown below:  
 
 ![](https://miro.medium.com/max/1248/1*5fXWlDFJhE1zlE-95ZnsJw.png)
+
+### Readout operations
+Using convolution operations, useful features for nodes can be learned to solve many node-focused tasks. However, to tackle graph-focused tasks, information of nodes needs to be aggregated to form a graph-level representation. In the literature, this is usually called the readout operation. This problem is non-trivial because stride convolutions or pooling in standard CNNs cannot be directly used due to the lack of a grid structure.
+
+**Order invariance** is a critical requirement for the graph readout operations is that the operation should be invariant to the order of nodes, i.e. if we change the indices of nodes and edges using a bijective function between two vertex sets, representation of the whole graph should not change.
+
+#### Statistics
+The most basic order-invariant operations are simple statistics like taking the **sum, average or max-pooling**, i.e.
+$$h_G=\sum_{i=1}^Nh_i^L \text{ or }h_G=\frac{1}{N}\sum_{i=1}^Nh_i^L\text{ or }h_G=max\{h_i^L, \forall i\}$$
+
+where $h_G$ is the representation for graph $G$ and $h^L_i$ is the representation of node $v_i$ in the final layer $L$. However, such firstmoment statistics *may not be representative enough* to distinguish different graphs.
+
+Another commonly used approach for gathering information
+is to add a **fully connected** (FC) layer as the final layer, i.e.
+$$h_G=\rho(\big[H^L\big]\Theta_{FC}$$
+
+where $[H^L]\in R^{Nf_l}$ is the concatenation of the final node representation $H^L, \Theta_{FC}\in R^{Nf_L\times f_{output}}$ are parameters, and
+$f_{output}$ is the dimensionality of outputs. This equation can be regarded as a weighted sum of combing node-level features. One advantage is that the model can learn different weights for different nodes, at the cost of being unable to guarantee order invariance.
+
+#### Hierarchical clustering
+Rather than a dichotomy between node or graph level structures, graphs are known to exhibit rich hierarchical structures, which can be explored by hierarchical clustering methods. However, these hierarchical clustering methods are all independent of the convolution operation, i.e. can be done as a pre-processing step and not trained end-to-end.
+
+**DiffPool** proposes a differentiable hierarchical clustering algorithm jointly trained with graph convolutions. Specifically, the authors propose learning a soft cluster assignment matrix in each layer using the hidden representations:
+$$S^l=F(A^l, H^l)$$
+
+where $S^l\in R^{N_l\times N_{l+1}}$ is the cluster assignment matrix, $N_l$ is the number of clusters in layer $l$ and $F(\cdot)$ is a function to be learned. Then, the node representations and new adjacency matrix for this “coarsened” graph can be obtained by taking the average according to $S^l$ as follows:
+
+$$H^{l+1}=(S^l)^T\hat H^{l+1},A^{l+1}=(S^l)^TA^lS^l$$
+
+where $\hat H^{l+1}$ is obtained by applying a convolution layer to $H^l$, i.e. coarsening the graph from $N_l$ nodes to $N_{l+1}$ nodes in each layer after the convolution operation. However, since the cluster assignment is soft, the connections between clusters are not sparse and the time complexity of the method is $O(N^2)$ in principle.
+
+[*Deep Learning on Graphs: A Survey*](https://arxiv.org/abs/1812.04202)
 
 ### Recap
 The purpose of graph convolutions is to **generalize the image convolution operation to graphs** so that we can achieve similar levels of performance and accuracy.
