@@ -6,4 +6,4 @@ Notebooks/Examples/.ipynb_checkpoints/pytorch-example-2-checkpoint.ipynb
 Notebooks/Examples/.ipynb_checkpoints/pytorch-example-3-checkpoint.ipynb
 Notebooks/GCN/pygcn/*
 Examples/*
-Notebooks/.ipynb_checkpoints
+*.ipynb_checkpoints*
