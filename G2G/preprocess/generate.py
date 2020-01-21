@@ -1,6 +1,7 @@
 import torch
 import networkx as nx
 import matplotlib.pyplot as plt
+import itertools
 from typing import List, Tuple, Dict, Generator
 from tqdm import tqdm
 
@@ -57,18 +58,18 @@ def shortest_path_as_adjacency_matrix(g: GraphWrapper, start: int, end: int) -> 
 
 
 def generate_dataset(iterations: int, N: int):
-    x_graph = []
-    x_pair = []
-    y = []
+    y = {}
+    x = []
     for graph in tqdm(generate_graphs(iterations, N), total=iterations):
-        x_graph.append(graph)
-        x_pair.append((1, 6))
-        y.append(shortest_path_as_adjacency_matrix(graph, 1, 6))
-    return x_graph, x_pair, y
+        x.append(graph)
+        y[graph] = {}
+        for combo in itertools.combinations(range(N), r=2):
+            y[graph][combo] = shortest_path_as_adjacency_matrix(graph, *combo)
+    return x, y
 
 
 def test():
-    generate_dataset(1_000, 7)
+    generate_dataset(1, 7)
     """
     for graph in generate_graphs(1, 7):
         graph.print()
