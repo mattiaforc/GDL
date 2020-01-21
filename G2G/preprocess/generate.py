@@ -2,6 +2,7 @@ import torch
 import networkx as nx
 import matplotlib.pyplot as plt
 from typing import List, Tuple, Dict, Generator
+from tqdm import tqdm
 
 
 class GraphWrapper:
@@ -50,18 +51,32 @@ def shortest_path_as_adjacency_matrix(g: GraphWrapper, start: int, end: int) -> 
         shortest_path = nx.shortest_path(g.graph, start, end, weight="weight")
         for s, e in zip(shortest_path, shortest_path[1:]):
             A[s - 1][e - 1] = g.adj[s - 1][e - 1]
-    except nx.NetworkXNoPath:
+    except (nx.NetworkXNoPath, nx.NodeNotFound):
         pass
     return A
 
 
-def main():
+def generate_dataset(iterations: int, N: int):
+    x_graph = []
+    x_pair = []
+    y = []
+    for graph in tqdm(generate_graphs(iterations, N), total=iterations):
+        x_graph.append(graph)
+        x_pair.append((1, 6))
+        y.append(shortest_path_as_adjacency_matrix(graph, 1, 6))
+    return x_graph, x_pair, y
+
+
+def test():
+    generate_dataset(1_000, 7)
+    """
     for graph in generate_graphs(1, 7):
         graph.print()
         s = GraphWrapper(shortest_path_as_adjacency_matrix(graph, 1, 6), pos=graph.pos)
         print(nx.shortest_path(graph.graph, 1, 6, weight="weight"))
         s.print()
+    """
 
 
 if __name__ == "__main__":
-    main()
+    test()
