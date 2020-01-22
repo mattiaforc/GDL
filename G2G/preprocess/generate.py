@@ -57,7 +57,8 @@ def shortest_path_as_adjacency_matrix(g: GraphWrapper, start: int, end: int) -> 
     return A
 
 
-def generate_dataset(iterations: int, N: int):
+def generate_dataset(iterations: int, N: int) \
+        -> Tuple[List[GraphWrapper], Dict[GraphWrapper, Dict[Tuple[int, int], torch.Tensor]]]:
     y = {}
     x = []
     for graph in tqdm(generate_graphs(iterations, N), total=iterations):
