@@ -67,18 +67,3 @@ def generate_dataset(iterations: int, N: int) \
         for combo in itertools.combinations(range(N), r=2):
             y[graph][combo] = shortest_path_as_adjacency_matrix(graph, *combo)
     return x, y
-
-
-def test():
-    generate_dataset(1, 7)
-    """
-    for graph in generate_graphs(1, 7):
-        graph.print()
-        s = GraphWrapper(shortest_path_as_adjacency_matrix(graph, 1, 6), pos=graph.pos)
-        print(nx.shortest_path(graph.graph, 1, 6, weight="weight"))
-        s.print()
-    """
-
-
-if __name__ == "__main__":
-    test()
