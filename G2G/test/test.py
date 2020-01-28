@@ -22,15 +22,17 @@ def test():
 
     gae: GAE = GAE(10, 10, 10)
     optimizer = optim.Adam(gae.parameters(), lr=0.01)
-    # switch numpy to torch
+    # TODO: switch numpy to torch
     loss_history = np.zeros(1000)
     norm = y[x[0]][(1, 6)].shape[0] * y[x[0]][(1, 6)].shape[0] / float(
         (y[x[0]][(1, 6)].shape[0] * y[x[0]][(1, 6)].shape[0] - y[x[0]][(1, 6)].sum()) * 2)
+    weights = torch.mean(y[x[0]][(1, 6)], dim=0)
+    print(weights)
 
     for epoch in tqdm.trange(1000):
         optimizer.zero_grad()
-        A_hat = gae(torch.eye(10, 10), x[0].adj)
-        loss = gae.loss(A_hat, y[x[0]][(1, 6)], 1) # norm al posto di 1
+        A_hat = gae(y[x[0]][(1, 6)])
+        loss = gae.loss(A_hat, torch.max(y[x[0]][(1, 6)], 1)[1], norm, weights)
         loss.backward()
         optimizer.step()
         if epoch % 50 == 0:

@@ -10,23 +10,26 @@ class GAE(nn.Module):
     def __init__(self, nfeat, nhid, dimz):
         super(GAE, self).__init__()
         self.nhid = nhid
-        self.gc1 = GraphConvolutionLayer(nfeat, nhid)
+        self.w = Parameter(torch.FloatTensor(self.nhid, self.nhid))
 
-    def encode(self, x, adj) -> torch.Tensor:
-        return self.gc1(x, adj)
+    def encode(self, adj) -> torch.Tensor:
+        return torch.mm(adj, self.w)
 
     def decode(self, z) -> torch.Tensor:
-        return torch.sigmoid(torch.matmul(z, z.t()))
+        return torch.mm(z, z.t())
 
-    def forward(self, x, adj) -> torch.Tensor:
-        z = self.encode(x, adj)
+    def forward(self, adj) -> torch.Tensor:
+        z = self.encode(adj)
         A_recon = self.decode(z)
         return A_recon
 
-    def loss(self, A_hat, A, norm) -> torch.Tensor:
-        bce_loss = norm * F.binary_cross_entropy(A_hat.view(-1), A.view(-1))
+    @staticmethod
+    def loss(A_hat, A, norm, weights) -> torch.Tensor:
+        cross_entropy_loss = F.cross_entropy(A_hat, A, weight=weights)
+        # bce_loss = norm * F.binary_cross_entropy_with_logits(A_hat.view(-1), A.view(-1))
         # kl_loss = 0.5 / A_hat.size(0) * (1 + 2 * self.log_std - self.mean.pow(2) - torch.exp(self.log_std).pow(2)).sum(1).mean()
-        return bce_loss  # - kl_loss
+        # bce_loss = norm * F.mse_loss(A_hat.view(-1), A.view(-1), reduction="mean")
+        return cross_entropy_loss  # - kl_loss
 
 
 class GraphConvolutionLayer(nn.Module):
