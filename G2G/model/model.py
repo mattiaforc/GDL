@@ -11,14 +11,9 @@ class GAE(nn.Module):
         super(GAE, self).__init__()
         self.nhid = nhid
         self.gc1 = GraphConvolutionLayer(nfeat, nhid)
-        self.gc2mu = GraphConvolutionLayer(nhid, dimz)
-        self.gc2std = GraphConvolutionLayer(nhid, dimz)
 
     def encode(self, x, adj) -> torch.Tensor:
-        x = self.gc1(x, adj)
-        self.mean = self.gc2mu(x, adj)
-        self.log_std = self.gc2std(x, adj)
-        return torch.exp(self.log_std) * torch.randn(*self.log_std.size()) + self.mean
+        return self.gc1(x, adj)
 
     def decode(self, z) -> torch.Tensor:
         return torch.sigmoid(torch.matmul(z, z.t()))

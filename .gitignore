@@ -1,4 +1,5 @@
-*/__pycache__/
+__pycache__/
+/__pycache__/
 .idea/*
 Papers/*
 Notebooks/Examples/checkpoint.pth.tar

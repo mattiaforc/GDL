@@ -30,7 +30,7 @@ def test():
     for epoch in tqdm.trange(1000):
         optimizer.zero_grad()
         A_hat = gae(torch.eye(10, 10), x[0].adj)
-        loss = gae.loss(A_hat, y[x[0]][(1, 6)], norm)
+        loss = gae.loss(A_hat, y[x[0]][(1, 6)], 1) # norm al posto di 1
         loss.backward()
         optimizer.step()
         if epoch % 50 == 0:
