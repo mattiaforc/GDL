@@ -12,7 +12,7 @@ def glorot_init(input_dim, output_dim) -> Parameter:
 
 
 def get_acc(adj_rec, adj_label) -> float:
-    accuracy = (adj_rec.view(-1) == adj_label.view(-1)).sum().float() / adj_label.shape[0]
+    accuracy = ((adj_rec.view(-1) > 0) == (adj_label.view(-1) > 0)).sum().float() / adj_label.shape[0]
     return accuracy
 
 
