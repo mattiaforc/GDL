@@ -19,7 +19,7 @@ def test():
         assert shortest_path_length(y[x[0]][(1, 6)]) == 0
 
     gae: GAE = GAE(10, 10, 10)
-    optimizer = optim.Adam(gae.parameters(), lr=0.05)
+    optimizer = optim.Adam(gae.parameters(), lr=0.1)
     # TODO: switch numpy to torch
     loss_history = np.zeros(1000)
     norm = y[x[0]][(1, 6)].shape[0] * y[x[0]][(1, 6)].shape[0] / float(
@@ -39,7 +39,8 @@ def test():
     plt.plot(loss_history)
     plt.show()
     print("Initial loss:\t", loss_history[0], "\tFinal loss:\t", loss_history[-1])
-    print("Original matrix:\n", y[x[0]][(1, 6)], "\nReconstructed matrix:\n", A_hat.data, "\nModified matrix:\n",
+    print("Original matrix:\n", y[x[0]][(1, 6)], "\nReconstructed matrix:\n", A_hat.data,
+          "\nModified matrix:\n",
           A_mod_hat)
     """
     for graph in generate_graphs(1, 7):
