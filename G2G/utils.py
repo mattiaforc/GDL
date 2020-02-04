@@ -11,24 +11,6 @@ def glorot_init(input_dim, output_dim) -> Parameter:
     return Parameter(initial, requires_grad=True)
 
 
-def get_acc(adj_rec, adj_label) -> float:
-    accuracy = ((adj_rec.view(-1) > 0) == (adj_label.view(-1) > 0)).sum().float() / adj_label.shape[0]
-    return accuracy
-
-
-def get_roc_auc_score(adj_rec, adj_label) -> float:
-    print("Rec ", adj_rec[0][0].detach(), "\tOrig ", adj_label[0][0], sep='')
-    labels_all = adj_label.view(-1).long()
-    preds_all = adj_rec.view(-1).long()
-    return roc_auc_score(labels_all, preds_all)
-
-
-def get_ap_score(adj_rec, adj_label) -> float:
-    labels_all = adj_label.view(-1).long()
-    preds_all = adj_rec.view(-1).long()
-    return average_precision_score(labels_all, preds_all)
-
-
 def shortest_path_length(A: torch.Tensor) -> int:
     return torch.nonzero(A).shape[0]
 

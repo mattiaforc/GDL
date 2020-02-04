@@ -1,12 +1,14 @@
 from torch import optim
 from G2G.preprocess.generate import generate_dataset
-from G2G.utils import shortest_path_length, adj_to_shortest_path, get_ap_score, get_acc
-from G2G.model.model import GAE
+from G2G.utils import shortest_path_length, adj_to_shortest_path
+from G2G.model.model import Predictor
 import matplotlib.pyplot as plt
 import networkx as nx
-import tqdm
+from tqdm import tqdm
 import torch
 import numpy as np
+
+from typing import List
 
 
 def test():
@@ -18,30 +20,24 @@ def test():
     except (nx.NetworkXNoPath, nx.NodeNotFound):
         assert shortest_path_length(y[x[0]][(1, 6)]) == 0
 
-    gae: GAE = GAE(10, 10, 10)
-    optimizer = optim.Adam(gae.parameters(), lr=0.1)
-    # TODO: switch numpy to torch
-    loss_history = np.zeros(1000)
-    norm = y[x[0]][(1, 6)].shape[0] * y[x[0]][(1, 6)].shape[0] / float(
-        (y[x[0]][(1, 6)].shape[0] * y[x[0]][(1, 6)].shape[0] - y[x[0]][(1, 6)].sum()) * 2)
-    weights = torch.mean(y[x[0]][(1, 6)], dim=0) + 1e-4
-    print("Calculated loss weights for class:\t", weights)
+    predictor: Predictor = Predictor(10, 10)
+    optimizer = optim.Adam(predictor.parameters(), lr=0.01)
+    loss_history = np.zeros(200)
 
-    for epoch in tqdm.trange(1000):
+    for epoch in tqdm(range(200)):
         optimizer.zero_grad()
-        A_hat = gae(y[x[0]][(1, 6)])
-        loss = gae.loss(A_hat, torch.max(y[x[0]][(1, 6)], 1)[1], norm, weights)
+        A_hat = predictor(torch.ones(*x[0].adj.shape), x[0].adj)
+        loss = predictor.loss(A_hat, y[x[0]][(1, 6)])
         loss.backward()
         optimizer.step()
         loss_history[epoch] = loss.detach().numpy()
 
-    A_mod_hat = torch.stack([torch.where(x == torch.max(x), torch.max(x), torch.tensor(0.0)) for x in A_hat])
     plt.plot(loss_history)
     plt.show()
     print("Initial loss:\t", loss_history[0], "\tFinal loss:\t", loss_history[-1])
-    print("Original matrix:\n", y[x[0]][(1, 6)], "\nReconstructed matrix:\n", A_hat.data,
-          "\nModified matrix:\n",
-          A_mod_hat)
+    print("\nAdjacency matrix of graph:\n", x[0].adj)
+    print("\nShortest nx-calculated matrix:\n", y[x[0]][(1, 6)], "\nReconstructed matrix:\n", A_hat.data)
+
     """
     for graph in generate_graphs(1, 7):
         graph.print()
