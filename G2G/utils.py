@@ -21,3 +21,29 @@ def adj_to_shortest_path(A: torch.Tensor, start_node: int) -> List[int]:
     while r[0] != 0 and r[-1] in nz:
         r.append(nz[r[-1]])
     return r
+
+
+def reconstructed_matrix_to_shortest_path(a: torch.Tensor, start: int, end: int) -> List[int]:
+    assert start > 0 and end > 0
+    assert start != end
+    start -= 1
+    end -= 1
+
+    l = list(a.max(dim=1)[1])
+    m: List[int] = [start + 1]
+
+    if end not in l:
+        return [0]
+
+    i = l[start]
+    c = 0
+    while i != end:
+        m.append(i.item() + 1)
+        i = l[i]
+        c += 1
+        if c == len(l):
+            m.append(0)
+            break
+    else:
+        m.append(end + 1)
+    return m
