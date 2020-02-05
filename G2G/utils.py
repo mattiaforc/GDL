@@ -1,8 +1,10 @@
-import torch
+import networkx as nx
 import numpy as np
-from typing import List
+import torch
+from G2G.model.graph_wrapper import GraphWrapper
+from typing import List, Tuple, Dict
+
 from torch.nn import Parameter
-from sklearn.metrics import roc_auc_score, average_precision_score
 
 
 def glorot_init(input_dim, output_dim) -> Parameter:
@@ -13,14 +15,6 @@ def glorot_init(input_dim, output_dim) -> Parameter:
 
 def shortest_path_length(A: torch.Tensor) -> int:
     return torch.nonzero(A).shape[0]
-
-
-def adj_to_shortest_path(A: torch.Tensor, start_node: int) -> List[int]:
-    nz = {x[0].item() + 1: x[1].item() + 1 for x in torch.nonzero(A)}
-    r = [nz[start_node]] if start_node in nz else [0]
-    while r[0] != 0 and r[-1] in nz:
-        r.append(nz[r[-1]])
-    return r
 
 
 def reconstructed_matrix_to_shortest_path(a: torch.Tensor, start: int, end: int) -> List[int]:
@@ -47,3 +41,28 @@ def reconstructed_matrix_to_shortest_path(a: torch.Tensor, start: int, end: int)
     else:
         m.append(end + 1)
     return m
+
+
+def shortest_as_adj_from_graph_wrapper(g: GraphWrapper, start: int, end: int) -> torch.Tensor:
+    A = torch.zeros(g.adj.shape)
+    try:
+        shortest_path = nx.shortest_path(g.graph, start, end, weight="weight")
+        A = shortest_path_to_adj(shortest_path, g.adj.shape[0])
+    except (nx.NetworkXNoPath, nx.NodeNotFound):
+        pass
+    return A
+
+
+def adj_to_shortest_path(A: torch.Tensor, start_node: int) -> List[int]:
+    nz = {x[0].item() + 1: x[1].item() + 1 for x in torch.nonzero(A)}
+    r = [start_node, nz[start_node]] if start_node in nz else [start_node]
+    while r[0] != 0 and r[-1] in nz:
+        r.append(nz[r[-1]])
+    return r
+
+
+def shortest_path_to_adj(l: List[int], dim: int):
+    A = torch.zeros((dim, dim))
+    for s, e in zip(l, l[1:]):
+        A[s - 1][e - 1] = 1
+    return A
