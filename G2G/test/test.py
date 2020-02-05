@@ -1,7 +1,6 @@
 from G2G.preprocess.generate import generate_dataset, GraphWrapper
 from G2G.utils import shortest_path_length, adj_to_shortest_path, reconstructed_matrix_to_shortest_path
 from G2G.model.model import Predictor
-from typing import List
 from torch import optim
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -16,8 +15,8 @@ def test(start: int, end: int, graph_number: int = 1, dim: int = 10):
     try:
         assert shortest_path_length(y[x[0]][(start, end)]) == len(
             nx.shortest_path(x[0].graph, start, end, weight="weight")) - 1
-        assert adj_to_shortest_path(y[x[0]][(start, end)], 1) == nx.shortest_path(x[0].graph, start, end,
-                                                                                  weight="weight")[1:]
+        assert adj_to_shortest_path(y[x[0]][(start, end)], start) == nx.shortest_path(x[0].graph, start, end,
+                                                                                      weight="weight")[1:]
     except (nx.NetworkXNoPath, nx.NodeNotFound):
         assert shortest_path_length(y[x[0]][(start, end)]) == 0
 
@@ -27,7 +26,7 @@ def test(start: int, end: int, graph_number: int = 1, dim: int = 10):
 
     for epoch in tqdm(range(200)):
         optimizer.zero_grad()
-        A_hat = predictor(torch.ones(*x[0].adj.shape), x[0].adj)
+        A_hat = predictor(torch.eye(*x[0].adj.shape), x[0].adj)
         loss = predictor.loss(A_hat, y[x[0]][(start, end)])
         loss.backward()
         optimizer.step()
@@ -52,4 +51,4 @@ def test(start: int, end: int, graph_number: int = 1, dim: int = 10):
 
 
 if __name__ == "__main__":
-    test(1, 4, graph_number=1, dim=5)
+    test(2, 7, graph_number=1, dim=10)
