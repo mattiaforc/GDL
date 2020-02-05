@@ -36,9 +36,9 @@ def test(start: int, end: int, graph_number: int = 1, dim: int = 10):
     plt.show()
     print("Initial loss:\t", loss_history[0], "\tFinal loss:\t", loss_history[-1])
     print("\nAdjacency matrix of graph:\n", x[0].adj)
-    print("\nShortest nx-calculated matrix:\n", y[x[0]][(start, end)], "\nReconstructed matrix:\n", A_hat.data)
+    # print("\nShortest nx-calculated matrix:\n", y[x[0]][(start, end)], "\nReconstructed matrix:\n", A_hat.data)
     print("\nShortest path (output of the net): \t", reconstructed_matrix_to_shortest_path(A_hat.data, start, end))
-    s = GraphWrapper(A_hat.data, pos=x[0].pos)
+    s = GraphWrapper(y[x[0]][(start, end)], pos=x[0].pos)
     print("Shortest nx path:\t", nx.shortest_path(s.graph, start, end, weight="weight"))
 
     """

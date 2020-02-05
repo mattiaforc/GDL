@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 from G2G.utils import glorot_init
+from torch.nn import Parameter
 from torch import nn
 
 
@@ -9,11 +10,12 @@ class GraphConvolutionLayer(nn.Module):
     def __init__(self, in_features, out_features):
         super(GraphConvolutionLayer, self).__init__()
         self.weight = glorot_init(in_features, out_features)
+        self.bias = Parameter(torch.FloatTensor(out_features), requires_grad=True)
 
     def forward(self, x, adj) -> torch.Tensor:
         support = torch.mm(x, self.weight)
         output = torch.mm(adj, support)
-        return output  # + self.bias
+        return output + self.bias
 
 
 class Predictor(nn.Module):
