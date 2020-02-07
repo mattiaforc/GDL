@@ -1,5 +1,4 @@
 from G2G.preprocess.generate import generate_dataset
-from G2G.model.graph_wrapper import GraphWrapper
 from G2G.utils import shortest_path_length, adj_to_shortest_path, reconstructed_matrix_to_shortest_path
 from G2G.model.model import Predictor
 from torch import optim
@@ -22,7 +21,7 @@ def test(start: int, end: int, graph_number: int = 1, dim: int = 10):
 
     # loss_history = np.zeros(200)
 
-    for _ in tqdm(range(1000)):
+    for _ in tqdm(range(500)):
         for graph in x:
             optimizer.zero_grad()
             A_hat = predictor(graph.adj)

@@ -15,6 +15,7 @@ class GraphConvolutionLayer(nn.Module):
     def forward(self, x, adj) -> torch.Tensor:
         support = torch.mm(x, self.weight)
         output = torch.mm(adj, support)
+        assert True not in torch.isnan(output)
         return output + self.bias
 
 
@@ -27,7 +28,7 @@ class Predictor(nn.Module):
     def forward(self, adj):
         x = F.relu(self.GCN1(torch.eye(*adj.shape), adj))
         x = self.GCN2(x, adj)
-        x = F.softmax(x, dim=0)
+        x = F.softmax(x, dim=1)
         # x = torch.stack([torch.where(a == torch.max(a), torch.max(a), torch.tensor(0.0)) for a in x])
         return x
 
