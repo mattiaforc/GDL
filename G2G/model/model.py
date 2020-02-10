@@ -25,8 +25,8 @@ class Predictor(nn.Module):
         self.GCN1 = GraphConvolutionLayer(input_dim, output_dim)
         self.GCN2 = GraphConvolutionLayer(output_dim, output_dim)
 
-    def forward(self, adj):
-        x = F.relu(self.GCN1(torch.eye(*adj.shape), adj))
+    def forward(self, x, adj):
+        x = F.relu(self.GCN1(x, adj))
         x = self.GCN2(x, adj)
         x = F.softmax(x, dim=1)
         return x

@@ -1,29 +1,33 @@
-from tqdm import tqdm
+from tqdm import tqdm, trange
 from G2G.preprocess.generate import generate_dataset
 from G2G.train.train import train
 from G2G.utils import shortest_path_length, adj_to_shortest_path
 import networkx as nx
 import torch
+import matplotlib.pyplot as plt
 
 
-def find_best_dataset(start: int, end: int, limit: int = 100, graph_number: int = 100, dim: int = 10,
-                      iterations: int = 500):
+def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10,
+                      iterations: int = 500, write_hdd: bool = True):
     cached_max = 0.
 
-    for _ in tqdm(range(limit), leave=True):
+    for _ in trange(limit):
         x, y = generate_dataset(graph_number, dim, tqdm_enabled=False)
-        predictor, accuracy = train(x, y, iterations, start, end, lr=0.001, tqdm_enabled=False)
+        predictor, accuracy, loss_history = train(x, y, iterations, lr=0.01, tqdm_enabled=False)
 
         if accuracy > cached_max:
+            plt.plot(loss_history)
+            plt.show()
             tqdm.write("\tNew accuracy: {}".format(accuracy))
-            with open("../dataset/dataset-x-gn:{}-dim:{}-iter:{}.pt".format(graph_number, dim, iterations),
-                      mode='wb') as output:
-                torch.save(x, output)
-            with open("../dataset/dataset-y-gn:{}-dim:{}-iter:{}.pt".format(graph_number, dim, iterations),
-                      mode='wb') as output:
-                torch.save(y, output)
-            torch.save(predictor.state_dict(),
-                       "../dataset/model-gn:{}-dim:{}-iter:{}.pt".format(graph_number, dim, iterations))
+            if write_hdd:
+                with open("../dataset/gn:{}-dim:{}-iter:{}-dataset-x.pt".format(graph_number, dim, iterations),
+                          mode='wb') as output:
+                    torch.save(x, output)
+                with open("../dataset/gn:{}-dim:{}-iter:{}-dataset-y.pt".format(graph_number, dim, iterations),
+                          mode='wb') as output:
+                    torch.save(y, output)
+                torch.save(predictor.state_dict(),
+                           "../dataset/gn:{}-dim:{}-iter:{}-model.pt".format(graph_number, dim, iterations))
             cached_max = accuracy
 
 
@@ -61,4 +65,4 @@ def test(start: int, end: int, graph_number: int = 100, dim: int = 10, iteration
 
 
 if __name__ == "__main__":
-    find_best_dataset(1, 10, graph_number=10, dim=10, iterations=500)
+    find_best_dataset(graph_number=100, dim=10, iterations=500, write_hdd=True)
