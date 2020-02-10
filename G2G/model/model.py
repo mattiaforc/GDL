@@ -10,11 +10,12 @@ class GraphConvolutionLayer(nn.Module):
     def __init__(self, in_features, out_features):
         super(GraphConvolutionLayer, self).__init__()
         self.weight = glorot_init(in_features, out_features)
-        self.bias = Parameter(torch.FloatTensor(out_features), requires_grad=True)
+        self.bias = Parameter(torch.zeros((in_features, out_features)), requires_grad=True)
 
     def forward(self, x, adj) -> torch.Tensor:
         support = torch.mm(x, self.weight)
         output = torch.mm(adj, support)
+        assert True not in torch.isnan(output)
         return output + self.bias
 
 
@@ -27,8 +28,7 @@ class Predictor(nn.Module):
     def forward(self, adj):
         x = F.relu(self.GCN1(torch.eye(*adj.shape), adj))
         x = self.GCN2(x, adj)
-        x = F.softmax(x, dim=0)
-        # x = torch.stack([torch.where(a == torch.max(a), torch.max(a), torch.tensor(0.0)) for a in x])
+        x = F.softmax(x, dim=1)
         return x
 
     @staticmethod
