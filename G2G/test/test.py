@@ -9,7 +9,7 @@ import networkx as nx
 def test(start: int, end: int, graph_number: int = 1, dim: int = 10):
     x, y = generate_dataset(graph_number, dim)
     predictor: Predictor = Predictor(dim, dim)
-    optimizer = optim.Adam(predictor.parameters(), lr=0.01)
+    optimizer = optim.Adam(predictor.parameters(), lr=0.001)
 
     try:
         assert shortest_path_length(y[x[0]][(start, end)]) == len(
@@ -61,4 +61,4 @@ def test(start: int, end: int, graph_number: int = 1, dim: int = 10):
 
 
 if __name__ == "__main__":
-    test(2, 7, graph_number=1000, dim=10)
+    test(1, 47, graph_number=100, dim=50)

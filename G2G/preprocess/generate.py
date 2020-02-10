@@ -25,6 +25,6 @@ def generate_dataset(iterations: int, N: int, random: str = 'randn') \
     for graph in tqdm(generate_graphs(iterations, N, random=random), total=iterations):
         x.append(graph)
         y[graph] = {}
-        for combo in itertools.combinations(range(N), r=2):
+        for combo in itertools.combinations(range(1, N + 1), r=2):
             y[graph][combo] = shortest_as_adj_from_graph_wrapper(graph, *combo)
     return x, y
