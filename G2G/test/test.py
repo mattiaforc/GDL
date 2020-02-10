@@ -22,6 +22,8 @@ def find_best_dataset(start: int, end: int, limit: int = 100, graph_number: int 
             with open("../dataset/dataset-y-gn:{}-dim:{}-iter:{}.pt".format(graph_number, dim, iterations),
                       mode='wb') as output:
                 torch.save(y, output)
+            torch.save(predictor.state_dict(),
+                       "../dataset/model-gn:{}-dim:{}-iter:{}.pt".format(graph_number, dim, iterations))
             cached_max = accuracy
 
 
