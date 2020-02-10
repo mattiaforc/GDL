@@ -8,12 +8,12 @@ import matplotlib.pyplot as plt
 
 
 def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10,
-                      iterations: int = 500, write_hdd: bool = True):
-    cached_max = 0.
+                      iterations: int = 500, lr: float = 0.01, write_hdd: bool = True):
+    cached_max = 34.
 
     for _ in trange(limit):
         x, y = generate_dataset(graph_number, dim, tqdm_enabled=False)
-        predictor, accuracy, loss_history = train(x, y, iterations, lr=0.01, tqdm_enabled=False)
+        predictor, accuracy, loss_history = train(x, y, iterations, lr=lr, tqdm_enabled=False)
 
         if accuracy > cached_max:
             plt.plot(loss_history)
@@ -65,4 +65,4 @@ def test(start: int, end: int, graph_number: int = 100, dim: int = 10, iteration
 
 
 if __name__ == "__main__":
-    find_best_dataset(graph_number=100, dim=10, iterations=500, write_hdd=True)
+    find_best_dataset(limit=500, graph_number=100, dim=10, iterations=150, lr=0.005, write_hdd=True)

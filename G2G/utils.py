@@ -72,10 +72,10 @@ def get_combo(dim: int, num: int) -> List[Tuple[int, int]]:
     combo = []
     assert dim > 0 and num > 0
     for _ in range(num):
-        start = torch.randint(1, dim, (1, 1)).item()
-        end = torch.randint(1, dim, (1, 1)).item()
+        start = torch.randint(1, dim + 1, (1, 1)).item()
+        end = torch.randint(1, dim + 1, (1, 1)).item()
         while end == start:
-            end = torch.randint(1, dim, (1, 1)).item()
+            end = torch.randint(1, dim + 1, (1, 1)).item()
         if start > end:
             start, end = end, start
         combo.append((start, end))
