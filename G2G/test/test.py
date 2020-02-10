@@ -1,15 +1,32 @@
-from G2G.preprocess.generate import generate_dataset
-from G2G.utils import shortest_path_length, adj_to_shortest_path, reconstructed_matrix_to_shortest_path
-from G2G.model.model import Predictor
-from torch import optim
 from tqdm import tqdm
+from G2G.preprocess.generate import generate_dataset
+from G2G.train.train import train
+from G2G.utils import shortest_path_length, adj_to_shortest_path
 import networkx as nx
+import torch
 
 
-def test(start: int, end: int, graph_number: int = 1, dim: int = 10):
+def find_best_dataset(start: int, end: int, limit: int = 100, graph_number: int = 100, dim: int = 10,
+                      iterations: int = 500):
+    cached_max = 0.
+
+    for _ in tqdm(range(limit), leave=True):
+        x, y = generate_dataset(graph_number, dim, tqdm_enabled=False)
+        predictor, accuracy = train(x, y, iterations, start, end, lr=0.001, tqdm_enabled=False)
+
+        if accuracy > cached_max:
+            tqdm.write("\tNew accuracy: {}".format(accuracy))
+            with open("../dataset/dataset-x-gn:{}-dim:{}-iter:{}.pt".format(graph_number, dim, iterations),
+                      mode='wb') as output:
+                torch.save(x, output)
+            with open("../dataset/dataset-y-gn:{}-dim:{}-iter:{}.pt".format(graph_number, dim, iterations),
+                      mode='wb') as output:
+                torch.save(y, output)
+            cached_max = accuracy
+
+
+def test(start: int, end: int, graph_number: int = 100, dim: int = 10, iterations: int = 500):
     x, y = generate_dataset(graph_number, dim)
-    predictor: Predictor = Predictor(dim, dim)
-    optimizer = optim.Adam(predictor.parameters(), lr=0.001)
 
     try:
         assert shortest_path_length(y[x[0]][(start, end)]) == len(
@@ -18,25 +35,6 @@ def test(start: int, end: int, graph_number: int = 1, dim: int = 10):
                                                                                       weight="weight")
     except (nx.NetworkXNoPath, nx.NodeNotFound):
         assert shortest_path_length(y[x[0]][(start, end)]) == 0
-
-    # loss_history = np.zeros(200)
-
-    for _ in tqdm(range(500)):
-        for graph in x:
-            optimizer.zero_grad()
-            A_hat = predictor(graph.adj)
-            loss = predictor.loss(A_hat, y[graph][(start, end)])
-            loss.backward()
-            optimizer.step()
-            # loss_history[epoch] = loss.detach().numpy()
-
-    a = [reconstructed_matrix_to_shortest_path(predictor(g.adj).data, start, end) == adj_to_shortest_path(
-        y[g][(start, end)], start) for g in x]
-    # a = [reconstructed_matrix_to_shortest_path(rec_adj, start, end) == label for rec_adj, label in
-    #      map(lambda g: (predictor(g.adj).data, y[g][(start, end)]), x)]
-
-    accuracy = sum(a) / len(a) * 100
-    print("Number of graphs: ", graph_number, "\tDimension of each graph: ", dim, "\tAccuracy: ", accuracy, "%")
 
     """
     # plt.plot(loss_history)
@@ -61,4 +59,4 @@ def test(start: int, end: int, graph_number: int = 1, dim: int = 10):
 
 
 if __name__ == "__main__":
-    test(1, 47, graph_number=100, dim=50)
+    find_best_dataset(1, 10, graph_number=10, dim=10, iterations=500)
