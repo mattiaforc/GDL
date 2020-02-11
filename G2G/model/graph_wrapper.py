@@ -1,6 +1,7 @@
-from typing import Tuple, List, Dict
 import networkx as nx
 import torch
+import uuid
+from typing import Tuple, List, Dict
 from matplotlib import pyplot as plt
 
 
@@ -12,6 +13,7 @@ class GraphWrapper:
         self.graph.add_edges_from(edges)
         nx.set_edge_attributes(self.graph, {k: float(v) for k, v in self.labels.items()}, name='weight')
         self.pos = pos or nx.spring_layout(self.graph)
+        self.__uuid = uuid.uuid4()
 
     def print(self):
         print(self.adj)
@@ -20,6 +22,15 @@ class GraphWrapper:
         nx.draw_networkx_edges(self.graph, self.pos)
         nx.draw_networkx_labels(self.graph, self.pos)
         plt.show()
+
+    def __hash__(self):
+        return self.__uuid.__hash__()
+
+    def __eq__(self, other):
+        return isinstance(other, GraphWrapper) and self.__uuid == other.__uuid
+
+    def __str__(self):
+        return str(self.__uuid)
 
 
 def get_labeled_edges(g: torch.Tensor) -> Tuple[List[Tuple[int, int]], Dict[Tuple[int, int], str]]:
