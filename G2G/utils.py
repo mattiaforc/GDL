@@ -2,7 +2,7 @@ import networkx as nx
 import numpy as np
 import torch
 from G2G.model.graph_wrapper import GraphWrapper
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 
 from torch.nn import Parameter
 

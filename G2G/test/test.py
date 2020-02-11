@@ -1,11 +1,7 @@
 from ray.tune.schedulers import ASHAScheduler
 from tqdm import tqdm, trange
-
-from G2G.model.model import Predictor
 from G2G.preprocess.generate import generate_dataset
 from G2G.train.train import train, train_tune
-from G2G.utils import shortest_path_length, adj_to_shortest_path
-import networkx as nx
 import torch
 import matplotlib.pyplot as plt
 from ray import tune
@@ -13,7 +9,7 @@ from ray import tune
 
 def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10, iterations: int = 500, lr: float = 0.01,
                       write_hdd: bool = False) -> None:
-    cached_max = 43.
+    cached_max = 0.
 
     for _ in trange(limit):
         x, y = generate_dataset(graph_number, dim, tqdm_enabled=False)
@@ -58,20 +54,16 @@ def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10, 
 """
 
 if __name__ == "__main__":
-    # find_best_dataset(limit=500, graph_number=100, dim=10, iterations=150, lr=0.005, write_hdd=False)
-
     # predictor: Predictor = Predictor(10, 10)
     # predictor.load_state_dict()
-    x = torch.load("../dataset/gn:100-dim:10-iter:150-dataset-x.pt")
-    y = torch.load("../dataset/gn:100-dim:10-iter:150-dataset-y.pt")
+
+    find_best_dataset(limit=100, graph_number=100, dim=10, iterations=300, lr=0.005, write_hdd=True)
 
     search_space = {
-        "x": x,
-        "y": y,
         "lr": tune.loguniform(0.0001, 0.1),
-        "iterations": tune.randint(500),
+        "iterations": tune.randint(1000),
     }
-    """analysis = tune.run(train_tune, resources_per_trial={'cpu': 1, 'gpu': 1}, num_samples=10,
-                        scheduler=ASHAScheduler(metric="mean_accuracy", mode="max", grace_period=1),
+
+    analysis = tune.run(train_tune, resources_per_trial={'gpu': 1}, num_samples=100,
+                        scheduler=ASHAScheduler(metric="mean_accuracy", mode="max", grace_period=25),
                         config=search_space)
-"""

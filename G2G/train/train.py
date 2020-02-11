@@ -3,17 +3,22 @@ from typing import List, Dict, Tuple, Iterable
 
 from ray import tune
 from torch import optim
-from tqdm import tqdm, trange
+from tqdm import trange
 from G2G.model.graph_wrapper import GraphWrapper
 from G2G.model.model import Predictor
 from G2G.utils import reconstructed_matrix_to_shortest_path, adj_to_shortest_path, get_combo, prepare_input
 
 
 def train_tune(config: Dict):
-    return train(config["x"], config["y"], tqdm_enabled=True, config=config, tune_on=True)
+    # y = {}
+    # for key in config["y"].keys():
+    #    y[key] = {eval(sub_key): v for sub_key, v in zip(config["y"][key].keys(), config["y"][key].values())}
+    x = torch.load("/home/malattia/Workspace/Tesi/G2G/dataset/gn:100-dim:10-iter:300-dataset-x.pt")
+    y = torch.load("/home/malattia/Workspace/Tesi/G2G/dataset/gn:100-dim:10-iter:300-dataset-y.pt")
+    return train(x, y, tqdm_enabled=True, config=config, tune_on=True)
 
 
-def train(x: List[GraphWrapper], y: Dict[GraphWrapper, Dict[Tuple[int, int], torch.Tensor]], config: Dict,
+def train(x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.Tensor]], config: Dict,
           tqdm_enabled: bool = True, tune_on: bool = False) -> Tuple[Predictor, float, torch.Tensor]:
     # , iterations: int, lr: float
 
@@ -28,7 +33,7 @@ def train(x: List[GraphWrapper], y: Dict[GraphWrapper, Dict[Tuple[int, int], tor
         for graph, c in zip(x, combo):
             optimizer.zero_grad()
             A_hat = predictor(prepare_input(c[0], c[1], graph.adj.shape[0]), graph.adj)
-            loss = predictor.loss(A_hat, y[graph][(c[0], c[1])])
+            loss = predictor.loss(A_hat, y[str(graph)][(c[0], c[1])])
             loss.backward()
             optimizer.step()
             loss_history[epoch] += loss.detach().item()
@@ -37,7 +42,7 @@ def train(x: List[GraphWrapper], y: Dict[GraphWrapper, Dict[Tuple[int, int], tor
     a = [
         reconstructed_matrix_to_shortest_path(predictor(prepare_input(c[0], c[1], x[0].adj.shape[0]), g.adj).data, c[0],
                                               c[1]) == adj_to_shortest_path(
-            y[g][(c[0], c[1])], c[0]) for g, c in zip(x, combo)]
+            y[str(g)][(c[0], c[1])], c[0]) for g, c in zip(x, combo)]
 
     accuracy = sum(a) / len(a) * 100
     if tune_on: tune.track.log(mean_accuracy=accuracy)
