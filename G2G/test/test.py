@@ -1,10 +1,15 @@
 from ray.tune.schedulers import ASHAScheduler
 from tqdm import tqdm, trange
+import networkx as nx
+from G2G.model.graph_wrapper import GraphWrapper
+from G2G.model.model import Predictor
 from G2G.preprocess.generate import generate_dataset
 from G2G.train.train import train, train_tune
 import torch
 import matplotlib.pyplot as plt
 from ray import tune
+
+from G2G.utils import reconstructed_matrix_to_shortest_path, prepare_input, shortest_path_to_adj
 
 
 def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10, iterations: int = 500, lr: float = 0.01,
@@ -54,16 +59,34 @@ def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10, 
 """
 
 if __name__ == "__main__":
-    # predictor: Predictor = Predictor(10, 10)
-    # predictor.load_state_dict()
 
-    find_best_dataset(limit=100, graph_number=100, dim=10, iterations=300, lr=0.005, write_hdd=True)
+    find_best_dataset(limit=100, graph_number=15, dim=10, iterations=100, lr=0.005, write_hdd=True)
+    x = torch.load("../dataset/gn:15-dim:10-iter:100-dataset-x.pt")
+    y = torch.load("../dataset/gn:15-dim:10-iter:100-dataset-y.pt")
+    predictor: Predictor = Predictor(10, 10)
+    predictor.load_state_dict(torch.load("../dataset/gn:15-dim:10-iter:100-model.pt"))
 
+    x[10].print()
+    while input("Stoppare? --stop") != "stop":
+        start = int(input("Start node"))
+        print("End node: ")
+        end = int(input())
+        guess = predictor(prepare_input(start, end, 10), x[10].adj)
+        print(guess.data)
+        print("\nShortest path (output of the net): \t", reconstructed_matrix_to_shortest_path(guess.data, start, end))
+
+        s = GraphWrapper(y[str(x[10])][(start, end)], pos=x[10].pos)
+        GraphWrapper(shortest_path_to_adj(reconstructed_matrix_to_shortest_path(guess.data, start, end), 10),
+                     pos=x[10].pos).print()
+        print("Shortest nx path:\t", nx.shortest_path(s.graph, start, end, weight="weight"))
+
+    """
     search_space = {
         "lr": tune.loguniform(0.0001, 0.1),
-        "iterations": tune.randint(1000),
+        "iterations": tune.randint(100, 1000),
     }
 
-    analysis = tune.run(train_tune, resources_per_trial={'gpu': 1}, num_samples=100,
-                        scheduler=ASHAScheduler(metric="mean_accuracy", mode="max", grace_period=25),
+    analysis = tune.run(train_tune, resources_per_trial={'gpu': 1}, num_samples=10,
+                        scheduler=ASHAScheduler(metric="mean_accuracy", mode="max", grace_period=20),
                         config=search_space)
+    """

@@ -13,9 +13,9 @@ def train_tune(config: Dict):
     # y = {}
     # for key in config["y"].keys():
     #    y[key] = {eval(sub_key): v for sub_key, v in zip(config["y"][key].keys(), config["y"][key].values())}
-    x = torch.load("/home/malattia/Workspace/Tesi/G2G/dataset/gn:100-dim:10-iter:300-dataset-x.pt")
-    y = torch.load("/home/malattia/Workspace/Tesi/G2G/dataset/gn:100-dim:10-iter:300-dataset-y.pt")
-    return train(x, y, tqdm_enabled=True, config=config, tune_on=True)
+    x = torch.load("/home/malattia/Workspace/Tesi/G2G/dataset/gn:100-dim:10-iter:150-dataset-x.pt")
+    y = torch.load("/home/malattia/Workspace/Tesi/G2G/dataset/gn:100-dim:10-iter:150-dataset-y.pt")
+    return train(x, y, tqdm_enabled=False, config=config, tune_on=True)
 
 
 def train(x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.Tensor]], config: Dict,

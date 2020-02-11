@@ -15,8 +15,8 @@ class GraphWrapper:
         self.pos = pos or nx.spring_layout(self.graph)
         self.__uuid = uuid.uuid4()
 
-    def print(self):
-        print(self.adj)
+    def print(self, print_adj: bool = False):
+        if print_adj: print(self.adj)
         nx.draw_networkx_edge_labels(self.graph, self.pos, self.labels)
         nx.draw_networkx_nodes(self.graph, self.pos)
         nx.draw_networkx_edges(self.graph, self.pos)
