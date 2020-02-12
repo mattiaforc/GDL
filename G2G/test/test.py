@@ -1,3 +1,5 @@
+import itertools
+
 from ray.tune.schedulers import ASHAScheduler
 from tqdm import tqdm, trange
 import networkx as nx
@@ -9,7 +11,7 @@ import torch
 import matplotlib.pyplot as plt
 from ray import tune
 
-from G2G.utils import reconstructed_matrix_to_shortest_path, prepare_input, shortest_path_to_adj
+from G2G.utils import reconstructed_matrix_to_shortest_path, prepare_input, shortest_path_to_adj, adj_to_shortest_path
 
 
 def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10, iterations: int = 500, lr: float = 0.01,
@@ -60,24 +62,30 @@ def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10, 
 
 if __name__ == "__main__":
 
-    find_best_dataset(limit=100, graph_number=15, dim=10, iterations=100, lr=0.005, write_hdd=True)
-    x = torch.load("../dataset/gn:15-dim:10-iter:100-dataset-x.pt")
-    y = torch.load("../dataset/gn:15-dim:10-iter:100-dataset-y.pt")
+    find_best_dataset(limit=10, graph_number=2, dim=10, iterations=300, lr=0.005, write_hdd=True)
+    x = torch.load("../dataset/gn:2-dim:10-iter:300-dataset-x.pt")
+    y = torch.load("../dataset/gn:2-dim:10-iter:300-dataset-y.pt")
     predictor: Predictor = Predictor(10, 10)
-    predictor.load_state_dict(torch.load("../dataset/gn:15-dim:10-iter:100-model.pt"))
+    predictor.load_state_dict(torch.load("../dataset/gn:2-dim:10-iter:300-model.pt"))
 
-    x[10].print()
     while input("Stoppare? --stop") != "stop":
-        start = int(input("Start node"))
-        print("End node: ")
-        end = int(input())
-        guess = predictor(prepare_input(start, end, 10), x[10].adj)
+        g_num = int(input("Graph number: "))
+        x[g_num - 1].print()
+        print("\n",
+              list(filter(
+                  lambda combo: len(adj_to_shortest_path(y[str(x[g_num - 1])][(combo[0], combo[1])], combo[0])) > 2,
+                  itertools.combinations(range(1, 10), r=2))),
+              "\n")
+
+        start = int(input("Start node: "))
+        end = int(input("End node: "))
+        guess = predictor(prepare_input(start, end, 10), x[g_num - 1].adj)
         print(guess.data)
         print("\nShortest path (output of the net): \t", reconstructed_matrix_to_shortest_path(guess.data, start, end))
 
-        s = GraphWrapper(y[str(x[10])][(start, end)], pos=x[10].pos)
+        s = GraphWrapper(y[str(x[g_num - 1])][(start, end)], pos=x[g_num - 1].pos)
         GraphWrapper(shortest_path_to_adj(reconstructed_matrix_to_shortest_path(guess.data, start, end), 10),
-                     pos=x[10].pos).print()
+                     pos=x[g_num - 1].pos).print()
         print("Shortest nx path:\t", nx.shortest_path(s.graph, start, end, weight="weight"))
 
     """

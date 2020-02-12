@@ -1,5 +1,8 @@
+from random import shuffle
+
 import networkx as nx
 import numpy as np
+import itertools
 import torch
 from G2G.model.graph_wrapper import GraphWrapper
 from typing import List, Tuple
@@ -68,23 +71,17 @@ def shortest_path_to_adj(l: List[int], dim: int):
     return A
 
 
-def get_combo(dim: int, num: int) -> List[Tuple[int, int]]:
-    combo = []
-    assert dim > 0 and num > 0
-    for _ in range(num):
-        start = torch.randint(1, dim + 1, (1, 1)).item()
-        end = torch.randint(1, dim + 1, (1, 1)).item()
-        while end == start:
-            end = torch.randint(1, dim + 1, (1, 1)).item()
-        if start > end:
-            start, end = end, start
-        combo.append((start, end))
-
-    return combo
+def get_combo(dim: int, length: int) -> List[Tuple[int, int]]:
+    r: List[Tuple[int, int]] = []
+    for combo in itertools.combinations(range(1, dim + 1), r=2):
+        r.append(combo)
+    r = r * (length // len(r)) if length > len(r) else r
+    shuffle(r)
+    return r
 
 
 def prepare_input(start: int, end: int, dim) -> torch.Tensor:
-    temp = torch.zeros((dim, dim))
+    temp = torch.eye(*(dim, dim))
     temp[start - 1, end - 1] += 1
     # temp[start - 1] = torch.tensor([1.] * dim)
     # temp[:, end - 1] = torch.tensor([1.])
