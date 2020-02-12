@@ -14,8 +14,8 @@ from ray import tune
 from G2G.utils import reconstructed_matrix_to_shortest_path, prepare_input, shortest_path_to_adj, adj_to_shortest_path
 
 
-def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10, iterations: int = 500, lr: float = 0.01,
-                      write_hdd: bool = False) -> None:
+def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10, iterations: int = 500,
+                      lr: float = 0.01, write_hdd: bool = False) -> None:
     cached_max = 0.
 
     for _ in trange(limit):
@@ -62,18 +62,19 @@ def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10, 
 
 if __name__ == "__main__":
 
-    find_best_dataset(limit=10, graph_number=2, dim=10, iterations=300, lr=0.005, write_hdd=True)
-    x = torch.load("../dataset/gn:2-dim:10-iter:300-dataset-x.pt")
-    y = torch.load("../dataset/gn:2-dim:10-iter:300-dataset-y.pt")
+    find_best_dataset(limit=10, graph_number=10, dim=10, iterations=50, lr=0.005, write_hdd=True)
+    x = torch.load("../dataset/gn:10-dim:10-iter:50-dataset-x.pt")
+    y = torch.load("../dataset/gn:10-dim:10-iter:50-dataset-y.pt")
     predictor: Predictor = Predictor(10, 10)
-    predictor.load_state_dict(torch.load("../dataset/gn:2-dim:10-iter:300-model.pt"))
+    predictor.load_state_dict(torch.load("../dataset/gn:10-dim:10-iter:50-model.pt"))
 
     while input("Stoppare? --stop") != "stop":
         g_num = int(input("Graph number: "))
         x[g_num - 1].print()
         print("\n",
               list(filter(
-                  lambda combo: len(adj_to_shortest_path(y[str(x[g_num - 1])][(combo[0], combo[1])], combo[0])) > 2,
+                  lambda combo: 2 < len(
+                      adj_to_shortest_path(y[str(x[g_num - 1])][(combo[0], combo[1])], combo[0])) <= 5,
                   itertools.combinations(range(1, 10), r=2))),
               "\n")
 

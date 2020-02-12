@@ -71,11 +71,10 @@ def shortest_path_to_adj(l: List[int], dim: int):
     return A
 
 
-def get_combo(dim: int, length: int) -> List[Tuple[int, int]]:
+def get_combo(dim: int) -> List[Tuple[int, int]]:
     r: List[Tuple[int, int]] = []
     for combo in itertools.combinations(range(1, dim + 1), r=2):
         r.append(combo)
-    r = r * (length // len(r)) if length > len(r) else r
     shuffle(r)
     return r
 
