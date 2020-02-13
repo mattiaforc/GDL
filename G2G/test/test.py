@@ -61,23 +61,31 @@ def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10, 
 """
 
 if __name__ == "__main__":
-
-    find_best_dataset(limit=10, graph_number=10, dim=10, iterations=50, lr=0.005, write_hdd=True)
+    find_best_dataset(limit=10, graph_number=10, dim=10, iterations=50, lr=0.001, write_hdd=True)
     x = torch.load("../dataset/gn:10-dim:10-iter:50-dataset-x.pt")
     y = torch.load("../dataset/gn:10-dim:10-iter:50-dataset-y.pt")
     predictor: Predictor = Predictor(10, 10)
     predictor.load_state_dict(torch.load("../dataset/gn:10-dim:10-iter:50-model.pt"))
 
+    acc = []
+    for g in x:
+        l = [adj_to_shortest_path(y[str(g)][(f1, f2)], f1) == reconstructed_matrix_to_shortest_path(
+            predictor(prepare_input(f1, f2, 10), g.adj), f1, f2) for f1, f2 in filter(
+            lambda combo: len(adj_to_shortest_path(y[str(g)][(combo[0], combo[1])], combo[0])) > 2,
+            itertools.combinations(range(1, 10), r=2))]
+        acc.append(sum(l) / len(l) * 100)
+    print(f"Accuracy on longer paths: {sum(acc) / len(acc)}, on {len(acc)} graphs.\n")
+
     while input("Stoppare? --stop") != "stop":
         g_num = int(input("Graph number: "))
         x[g_num - 1].print()
-        print("\n",
+        """print("\n",
               list(filter(
                   lambda combo: 2 < len(
-                      adj_to_shortest_path(y[str(x[g_num - 1])][(combo[0], combo[1])], combo[0])) <= 5,
+                      adj_to_shortest_path(y[str(x[g_num - 1])][(combo[0], combo[1])], combo[0])) <= 4,
                   itertools.combinations(range(1, 10), r=2))),
               "\n")
-
+        """
         start = int(input("Start node: "))
         end = int(input("End node: "))
         guess = predictor(prepare_input(start, end, 10), x[g_num - 1].adj)

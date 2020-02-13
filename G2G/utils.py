@@ -71,7 +71,7 @@ def shortest_path_to_adj(l: List[int], dim: int):
     return A
 
 
-def get_combo(dim: int) -> List[Tuple[int, int]]:
+def get_all_combo(dim: int) -> List[Tuple[int, int]]:
     r: List[Tuple[int, int]] = []
     for combo in itertools.combinations(range(1, dim + 1), r=2):
         r.append(combo)
@@ -79,9 +79,21 @@ def get_combo(dim: int) -> List[Tuple[int, int]]:
     return r
 
 
+def get_combo(max: int, num: int) -> Tuple[int, int]:
+    assert max > 0 and num > 0
+    for _ in range(num):
+        start = torch.randint(1, max + 1, (1, 1)).item()
+        end = torch.randint(1, max + 1, (1, 1)).item()
+        while end == start:
+            end = torch.randint(1, max + 1, (1, 1)).item()
+        if start > end:
+            start, end = end, start
+        yield start, end
+
+
 def prepare_input(start: int, end: int, dim) -> torch.Tensor:
     temp = torch.eye(*(dim, dim))
-    temp[start - 1, end - 1] += 1
-    # temp[start - 1] = torch.tensor([1.] * dim)
-    # temp[:, end - 1] = torch.tensor([1.])
+    temp[start - 1, end - 1] += 5
+    temp[start - 1] = torch.tensor([1.] * dim)
+    temp[:, end - 1] = torch.tensor([1.])
     return temp
