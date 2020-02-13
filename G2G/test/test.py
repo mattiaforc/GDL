@@ -1,5 +1,4 @@
 import itertools
-
 from ray.tune.schedulers import ASHAScheduler
 from tqdm import tqdm, trange
 import networkx as nx
@@ -11,7 +10,8 @@ import torch
 import matplotlib.pyplot as plt
 from ray import tune
 
-from G2G.utils import reconstructed_matrix_to_shortest_path, prepare_input, shortest_path_to_adj, adj_to_shortest_path
+from G2G.utils import reconstructed_matrix_to_shortest_path, prepare_input, shortest_path_to_adj, adj_to_shortest_path, \
+    get_score
 
 
 def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10, iterations: int = 500,
@@ -61,20 +61,20 @@ def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10, 
 """
 
 if __name__ == "__main__":
-    find_best_dataset(limit=10, graph_number=10, dim=10, iterations=50, lr=0.001, write_hdd=True)
-    x = torch.load("../dataset/gn:10-dim:10-iter:50-dataset-x.pt")
-    y = torch.load("../dataset/gn:10-dim:10-iter:50-dataset-y.pt")
-    predictor: Predictor = Predictor(10, 10)
-    predictor.load_state_dict(torch.load("../dataset/gn:10-dim:10-iter:50-model.pt"))
-
-    acc = []
-    for g in x:
-        l = [adj_to_shortest_path(y[str(g)][(f1, f2)], f1) == reconstructed_matrix_to_shortest_path(
-            predictor(prepare_input(f1, f2, 10), g.adj), f1, f2) for f1, f2 in filter(
-            lambda combo: len(adj_to_shortest_path(y[str(g)][(combo[0], combo[1])], combo[0])) > 2,
-            itertools.combinations(range(1, 10), r=2))]
-        acc.append(sum(l) / len(l) * 100)
-    print(f"Accuracy on longer paths: {sum(acc) / len(acc)}, on {len(acc)} graphs.\n")
+    gn = 10
+    it = 100
+    # find_best_dataset(limit=100, graph_number=gn, dim=10, iterations=it, lr=0.005, write_hdd=True)
+    x = torch.load(f"../dataset/gn:{gn}-dim:10-iter:{it}-dataset-x.pt")
+    y = torch.load(f"../dataset/gn:{gn}-dim:10-iter:{it}-dataset-y.pt")
+    # predictor: Predictor = Predictor(10, 10)
+    # predictor.load_state_dict(torch.load(f"../dataset/gn:{gn}-dim:10-iter:{it}-model.pt"))
+    max_iter = 100
+    predictor, accuracy, loss_history = train(x, y, {"lr": 0.005, "iterations": max_iter})
+    plt.plot(loss_history / (gn * len(list(itertools.combinations(range(1, 11), r=2)))))
+    plt.show()
+    print(get_score(predictor, x, y))
+    if input("Save model? (y/n)") == 'y': torch.save(predictor.state_dict(),
+                                                     f"../dataset/better-trained-gn:{gn}-dim:{10}-iter:{max_iter}-model.pt")
 
     while input("Stoppare? --stop") != "stop":
         g_num = int(input("Graph number: "))
