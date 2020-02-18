@@ -2,6 +2,8 @@ import itertools
 from ray.tune.schedulers import ASHAScheduler
 from tqdm import tqdm, trange
 import networkx as nx
+
+from G2G.decorators.decorators import logger, Formatter
 from G2G.model.graph_wrapper import GraphWrapper
 from G2G.model.model import Predictor
 from G2G.preprocess.generate import generate_dataset
@@ -60,21 +62,23 @@ def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10, 
         s.print()
 """
 
-if __name__ == "__main__":
+
+def old_func():
     gn = 10
     it = 100
-    # find_best_dataset(limit=100, graph_number=gn, dim=10, iterations=it, lr=0.005, write_hdd=True)
+    # find_best_dataset(limit=10, graph_number=gn, dim=10, iterations=it, lr=0.005, write_hdd=True)
     x = torch.load(f"../dataset/gn:{gn}-dim:10-iter:{it}-dataset-x.pt")
     y = torch.load(f"../dataset/gn:{gn}-dim:10-iter:{it}-dataset-y.pt")
     # predictor: Predictor = Predictor(10, 10)
-    # predictor.load_state_dict(torch.load(f"../dataset/gn:{gn}-dim:10-iter:{it}-model.pt"))
-    max_iter = 100
+    # predictor.load_state_dict(torch.load(f"../dataset/better-trained-gn:{gn}-dim:10-iter:{it}-model.pt"))
+    max_iter = 10
     predictor, accuracy, loss_history = train(x, y, {"lr": 0.005, "iterations": max_iter})
-    plt.plot(loss_history / (gn * len(list(itertools.combinations(range(1, 11), r=2)))))
-    plt.show()
+    # plt.plot(loss_history / (gn * len(list(itertools.combinations(range(1, 11), r=2)))))
+    # plt.show()
+    x, y = generate_dataset(10, 10)
+
     print(get_score(predictor, x, y))
-    if input("Save model? (y/n)") == 'y': torch.save(predictor.state_dict(),
-                                                     f"../dataset/better-trained-gn:{gn}-dim:{10}-iter:{max_iter}-model.pt")
+    # torch.save(predictor.state_dict(), f"../dataset/better-trained-gn:{gn}-dim:{10}-iter:{max_iter}-model.pt")
 
     while input("Stoppare? --stop") != "stop":
         g_num = int(input("Graph number: "))
@@ -107,3 +111,30 @@ if __name__ == "__main__":
                         scheduler=ASHAScheduler(metric="mean_accuracy", mode="max", grace_period=20),
                         config=search_space)
     """
+
+
+@logger(Formatter(
+    lambda x: "Graph number: " + str(x[0]) + "\nIterations: " + str(x[1]) + "\nLimit: " + str(
+        x[2]) + "\n\n\n"))
+def send_info(gn, it, limit):
+    return gn, it, limit
+
+
+@logger(Formatter(lambda x: "**Schedule completed**"))
+def schedule():
+    it = 100
+    # find_best_dataset(limit=limit, graph_number=1000, dim=10, iterations=it, lr=0.005, write_hdd=True)
+    x = torch.load(f"../dataset/gn:10-dim:10-iter:{it}-dataset-x.pt")
+    y = torch.load(f"../dataset/gn:10-dim:10-iter:{it}-dataset-y.pt")
+    max_iter = 100
+    predictor, accuracy, loss_history = train(x, y, {"lr": 0.005, "iterations": max_iter})
+    # predictor = Predictor(10, 10)
+    # predictor.load_state_dict(torch.load(f"../dataset/better-trained-gn:10-dim:10-iter:{max_iter}-model.pt"))
+    get_score(predictor, x, y)
+    # torch.save(predictor.state_dict(), f"../dataset/better-trained-gn:1000-dim:{10}-iter:{max_iter}-model.pt")
+    get_score(predictor, *generate_dataset(10, 10))
+    return 0
+
+
+if __name__ == "__main__":
+    schedule()

@@ -7,6 +7,7 @@ from G2G.model.graph_wrapper import GraphWrapper
 from G2G.model.model import Predictor
 from G2G.utils import reconstructed_matrix_to_shortest_path, adj_to_shortest_path, get_all_combo, prepare_input, \
     get_combo
+from G2G.decorators.decorators import logger, Formatter, timer
 
 
 def train_tune(config: Dict):
@@ -15,10 +16,13 @@ def train_tune(config: Dict):
     return train(x, y, tqdm_enabled=False, config=config, tune_on=True)
 
 
+@logger(Formatter(lambda x: "Training results:\nAccuracy: " + str(x[1]) + "\nLast loss: " + str(x[2][-1].item())))
+@timer
 def train(x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.Tensor]], config: Dict,
           tqdm_enabled: bool = True, tune_on: bool = False) -> Tuple[Predictor, float, torch.Tensor]:
     # config = {iterations: int, lr: float, combo_num: int}
 
+    # TODO: Laplacian instead of adj
     assert x != []
     predictor: Predictor = Predictor(*x[0].adj.shape)
     optimizer = optim.Adam(predictor.parameters(), lr=config["lr"])

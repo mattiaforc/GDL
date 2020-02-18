@@ -2,6 +2,8 @@ from random import shuffle
 import networkx as nx
 import itertools
 import torch
+
+from G2G.decorators.decorators import logger, Formatter, timer
 from G2G.model.graph_wrapper import GraphWrapper
 from typing import List, Tuple, Dict
 
@@ -86,8 +88,8 @@ def get_combo(max: int, num: int) -> Tuple[int, int]:
 def prepare_input(start: int, end: int, dim) -> torch.Tensor:
     temp = torch.zeros(*(dim, dim))
     temp[start - 1, end - 1] += 1
-    temp[start - 1] = torch.tensor([1.] * dim)
-    temp[:, end - 1] = torch.tensor([1.])
+    # temp[start - 1] = torch.tensor([1.] * dim)
+    # temp[:, end - 1] = torch.tensor([1.])
     return temp
 
 
@@ -97,6 +99,7 @@ def is_path_valid(rec, adj):
     return True
 
 
+@logger(Formatter(lambda x: "Scores:\n" + str([str(k) + ":  " + str(v) + "\n" for k, v in x.items()])))
 def get_score(predictor: Predictor, x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.tensor]]) \
         -> Dict[str, float]:
     acc: Dict[str, List[float]] = {'total': [], 'long': [], 'short': [], 'no_path': [], 'invalid_path': []}
@@ -115,7 +118,7 @@ def get_score(predictor: Predictor, x: List[GraphWrapper], y: Dict[str, Dict[Tup
                 acc['short'].append(label == rec)
             if 0 in rec:
                 acc['no_path'].append(1)
-            if not is_path_valid(rec, g.adj):
+            elif not is_path_valid(rec, g.adj):
                 acc['invalid_path'].append(1)
 
     return {k: sum(v) / tot_len * 100 if k in ("no_path", "invalid_path", "total") else sum(v) / len(v) * 100 for k, v
