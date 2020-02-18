@@ -19,7 +19,7 @@ def generate_graphs(iterations: int, N: int, random: str = 'randn') -> Generator
 
 
 def generate_dataset(iterations: int, N: int, random: str = 'randn', tqdm_enabled: bool = True) \
-        -> Tuple[List[GraphWrapper], Dict[GraphWrapper, Dict[Tuple[int, int], torch.Tensor]]]:
+        -> Tuple[List[GraphWrapper], Dict[str, Dict[Tuple[int, int], torch.Tensor]]]:
     y = {}
     x = []
     custom_range: Iterable = tqdm(generate_graphs(iterations, N, random=random),
@@ -27,7 +27,7 @@ def generate_dataset(iterations: int, N: int, random: str = 'randn', tqdm_enable
 
     for graph in custom_range:
         x.append(graph)
-        y[graph] = {}
+        y[str(graph)] = {}
         for combo in itertools.combinations(range(1, N + 1), r=2):
-            y[graph][combo] = shortest_as_adj_from_graph_wrapper(graph, *combo)
+            y[str(graph)][combo] = shortest_as_adj_from_graph_wrapper(graph, *combo)
     return x, y

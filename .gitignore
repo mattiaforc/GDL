@@ -12,3 +12,4 @@ Notebooks/Examples/.ipynb_checkpoints/pytorch-example-3-checkpoint.ipynb
 Notebooks/GCN/pygcn/*
 Examples/*
 *.ipynb_checkpoints*
+/G2G/telegram-tokens.txt
