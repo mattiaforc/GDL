@@ -32,7 +32,7 @@ def train(x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.Tensor
         for graph in x:
             for c in get_all_combo(dim):
                 optimizer.zero_grad()
-                A_hat = predictor(prepare_input(c[0], c[1], dim, graph.laplacian), graph.laplacian)
+                A_hat = predictor(prepare_input(c[0], c[1], dim, graph.adj), graph.laplacian)
                 loss = predictor.loss(A_hat, y[str(graph)][(c[0], c[1])])
                 loss.backward()
                 optimizer.step()
@@ -42,7 +42,7 @@ def train(x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.Tensor
     for g in x:
         for c in combo:
             a.append(reconstructed_matrix_to_shortest_path(
-                predictor(prepare_input(c[0], c[1], dim, g.laplacian), g.laplacian).data, c[0],
+                predictor(prepare_input(c[0], c[1], dim, g.adj), g.laplacian).data, c[0],
                 c[1]) == adj_to_shortest_path(y[str(g)][(c[0], c[1])], c[0]))
     accuracy = sum(a) / len(a) * 100
     if tune_on: tune.track.log(mean_accuracy=accuracy)
