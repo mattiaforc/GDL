@@ -2,11 +2,10 @@ from random import shuffle
 import networkx as nx
 import itertools
 import torch
-
+from collections import Counter
 from G2G.decorators.decorators import logger, Formatter, timer
 from G2G.model.graph_wrapper import GraphWrapper
 from typing import List, Tuple, Dict
-
 from G2G.model.model import Predictor
 
 
@@ -85,11 +84,13 @@ def get_combo(max: int, num: int) -> Tuple[int, int]:
         yield start, end
 
 
-def prepare_input(start: int, end: int, dim) -> torch.Tensor:
+def prepare_input(start: int, end: int, dim: int, adj) -> torch.Tensor:
     temp = torch.zeros(*(dim, dim))
-    temp[start - 1, end - 1] += 1
+    # temp[start - 1, end - 1] += 1
     # temp[start - 1] = torch.tensor([1.] * dim)
     # temp[:, end - 1] = torch.tensor([1.])
+    temp[start - 1] = adj[start - 1]
+    temp[:, end - 1] = adj[:, end - 1]
     return temp
 
 
@@ -110,7 +111,8 @@ def get_score(predictor: Predictor, x: List[GraphWrapper], y: Dict[str, Dict[Tup
         for c1, c2 in itertools.combinations(range(1, dim + 1), r=2):
             tot_len += 1
             label = adj_to_shortest_path(y[str(g)][(c1, c2)], c1)
-            rec = reconstructed_matrix_to_shortest_path(predictor(prepare_input(c1, c2, dim), g.adj), c1, c2)
+            rec = reconstructed_matrix_to_shortest_path(predictor(prepare_input(c1, c2, dim, g.laplacian), g.laplacian), c1,
+                                                        c2)
             acc['total'].append(label == rec)
             if len(label) > 2:
                 acc['long'].append(label == rec)

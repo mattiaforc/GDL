@@ -5,8 +5,7 @@ from torch import optim
 from tqdm import trange
 from G2G.model.graph_wrapper import GraphWrapper
 from G2G.model.model import Predictor
-from G2G.utils import reconstructed_matrix_to_shortest_path, adj_to_shortest_path, get_all_combo, prepare_input, \
-    get_combo
+from G2G.utils import reconstructed_matrix_to_shortest_path, adj_to_shortest_path, get_all_combo, prepare_input
 from G2G.decorators.decorators import logger, Formatter, timer
 
 
@@ -21,21 +20,19 @@ def train_tune(config: Dict):
 def train(x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.Tensor]], config: Dict,
           tqdm_enabled: bool = True, tune_on: bool = False) -> Tuple[Predictor, float, torch.Tensor]:
     # config = {iterations: int, lr: float, combo_num: int}
-
-    # TODO: Laplacian instead of adj
     assert x != []
-    predictor: Predictor = Predictor(*x[0].adj.shape)
+    predictor: Predictor = Predictor(*x[0].laplacian.shape)
     optimizer = optim.Adam(predictor.parameters(), lr=config["lr"])
     custom_range: Iterable = trange(config["iterations"]) if tqdm_enabled else range(config["iterations"])
     loss_history = torch.zeros(config["iterations"])
 
-    dim: int = x[0].adj.shape[0]
+    dim: int = x[0].laplacian.shape[0]
     combo: List[Tuple[int, int]] = get_all_combo(dim)
     for epoch in custom_range:
         for graph in x:
             for c in get_all_combo(dim):
                 optimizer.zero_grad()
-                A_hat = predictor(prepare_input(c[0], c[1], dim), graph.adj)
+                A_hat = predictor(prepare_input(c[0], c[1], dim, graph.laplacian), graph.laplacian)
                 loss = predictor.loss(A_hat, y[str(graph)][(c[0], c[1])])
                 loss.backward()
                 optimizer.step()
@@ -44,8 +41,9 @@ def train(x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.Tensor
     a = []
     for g in x:
         for c in combo:
-            a.append(reconstructed_matrix_to_shortest_path(predictor(prepare_input(c[0], c[1], dim), g.adj).data, c[0],
-                                                           c[1]) == adj_to_shortest_path(y[str(g)][(c[0], c[1])], c[0]))
+            a.append(reconstructed_matrix_to_shortest_path(
+                predictor(prepare_input(c[0], c[1], dim, g.laplacian), g.laplacian).data, c[0],
+                c[1]) == adj_to_shortest_path(y[str(g)][(c[0], c[1])], c[0]))
     accuracy = sum(a) / len(a) * 100
     if tune_on: tune.track.log(mean_accuracy=accuracy)
 

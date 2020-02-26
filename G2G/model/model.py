@@ -16,7 +16,7 @@ class GraphConvolutionLayer(nn.Module):
         support = torch.mm(x, self.weight)
         output = torch.mm(adj, support)
         assert True not in torch.isnan(output)
-        return output # + self.bias
+        return output  # + self.bias
 
 
 class Predictor(nn.Module):
@@ -31,10 +31,10 @@ class Predictor(nn.Module):
     def forward(self, x, adj):
         x = torch.sigmoid(self.GCN1(x, adj))
         # x = self.GCN1(x, adj)
-        x = torch.sigmoid(self.GCN2(x, adj))
-        x = torch.sigmoid(self.GCN3(x, adj))
-        x = torch.sigmoid(self.GCN4(x, adj))
-        x = self.GCN5(x, adj)
+        # x = torch.sigmoid(self.GCN2(x, adj))
+        # x = torch.sigmoid(self.GCN3(x, adj))
+        # x = torch.sigmoid(self.GCN4(x, adj))
+        x = self.GCN2(x, adj)
         x = F.log_softmax(x, dim=1)
         return x
 
