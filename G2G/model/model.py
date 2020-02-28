@@ -16,7 +16,7 @@ class GraphConvolutionLayer(nn.Module):
         support = torch.mm(x, self.weight)
         output = torch.mm(adj, support)
         assert True not in torch.isnan(output)
-        return output # + self.bias
+        return output + self.bias
 
 
 class Predictor(nn.Module):
@@ -35,12 +35,12 @@ class Predictor(nn.Module):
         x = torch.sigmoid(self.GCN3(x, adj))
         x = torch.sigmoid(self.GCN4(x, adj))
         x = self.GCN5(x, adj)
-        x = F.log_softmax(x, dim=1)
+        x = F.softmax(x, dim=1)
         return x
 
     @staticmethod
     def loss(A_hat, A):
-        return F.binary_cross_entropy_with_logits(A_hat, A)
+        return F.binary_cross_entropy(A_hat, A)
 
 
 def glorot_init(input_dim, output_dim) -> Parameter:

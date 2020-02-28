@@ -88,8 +88,8 @@ def get_combo(max: int, num: int) -> Tuple[int, int]:
 def prepare_input(start: int, end: int, dim) -> torch.Tensor:
     temp = torch.zeros(*(dim, dim))
     temp[start - 1, end - 1] += 1
-    # temp[start - 1] = torch.tensor([1.] * dim)
-    # temp[:, end - 1] = torch.tensor([1.])
+    temp[start - 1] = torch.tensor([1.] * dim)
+    temp[:, end - 1] = torch.tensor([1.])
     return temp
 
 
