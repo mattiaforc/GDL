@@ -22,9 +22,9 @@ def train(x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.Tensor
           tqdm_enabled: bool = True, tune_on: bool = False) -> Tuple[Predictor, float, torch.Tensor]:
     # config = {iterations: int, lr: float, combo_num: int}
 
-    # TODO: Laplacian instead of adj
     assert x != []
     predictor: Predictor = Predictor(*x[0].adj.shape)
+    predictor.train()
     optimizer = optim.Adam(predictor.parameters(), lr=config["lr"])
     custom_range: Iterable = trange(config["iterations"]) if tqdm_enabled else range(config["iterations"])
     loss_history = torch.zeros(config["iterations"])

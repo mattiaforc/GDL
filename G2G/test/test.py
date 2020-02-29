@@ -123,16 +123,20 @@ def send_info(gn, it, limit):
 @logger(Formatter(lambda x: "**Schedule completed**"))
 def schedule():
     it = 100
-    # find_best_dataset(limit=1, graph_number=10, dim=10, iterations=it, lr=0.005, write_hdd=True)
-    x = torch.load(f"../dataset/gn:10-dim:10-iter:{it}-dataset-x.pt")
-    y = torch.load(f"../dataset/gn:10-dim:10-iter:{it}-dataset-y.pt")
+    gn = 10
+    # find_best_dataset(limit=1, graph_number=gn, dim=10, iterations=it, lr=0.005, write_hdd=True)
+    x = torch.load(f"../dataset/gn:{gn}-dim:10-iter:{it}-dataset-x.pt")
+    y = torch.load(f"../dataset/gn:{gn}-dim:10-iter:{it}-dataset-y.pt")
     max_iter = 300
-    predictor, accuracy, loss_history = train(x, y, {"lr": 0.005, "iterations": max_iter})
+    predictor, accuracy, loss_history = train(x, y, {"lr": 0.001, "iterations": max_iter})
+    plt.plot(loss_history)
+    plt.show()
     # predictor = Predictor(10, 10)
     # predictor.load_state_dict(torch.load(f"../dataset/better-trained-gn:10-dim:10-iter:{max_iter}-model.pt"))
+    predictor.eval()
     print(get_score(predictor, x, y))
-    torch.save(predictor.state_dict(), f"../dataset/better-trained-gn:10-dim:{10}-iter:{max_iter}-model.pt")
-    print(get_score(predictor, *generate_dataset(10, 10)))
+    # torch.save(predictor.state_dict(), f"../dataset/better-trained-gn:{gn}-dim:{10}-iter:{max_iter}-model.pt")
+    print(get_score(predictor, *generate_dataset(100, 10)))
     return 0
 
 
