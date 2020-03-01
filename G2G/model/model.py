@@ -20,7 +20,7 @@ class GraphConvolutionChebychev(nn.Module):
     def reset_parameters(self):
         stdv = 1. / math.sqrt(self.weight.shape[1])
         self.weight.data.uniform_(-stdv, stdv)
-        if self.bias is True: self.bias.data.fill_(0.0)
+        if self.bias is not False: self.bias.data.fill_(0.0)
 
     def forward(self, x, L):
         Tx_0 = x
@@ -35,8 +35,8 @@ class GraphConvolutionChebychev(nn.Module):
             out = out + torch.matmul(Tx_2, self.weight[k])
             Tx_0, Tx_1 = Tx_1, Tx_2
 
-        #if self.bias is not False:
-        #    out = out + self.bias
+        if self.bias is not False:
+            out = out + self.bias
 
         return out
 
@@ -63,16 +63,18 @@ class Predictor(nn.Module):
         # self.GCN3 = GraphConvolutionLayer(50, 50)
         # self.GCN4 = GraphConvolutionLayer(50, output_dim)
         # self.GCN5 = GraphConvolutionLayer(output_dim, output_dim)
-        self.GCN1 = GraphConvolutionChebychev(input_dim, 10, 3, bias=False)
-        self.GCN2 = GraphConvolutionChebychev(10, 10, 3, bias=False)
-        self.GCN3 = GraphConvolutionChebychev(10, output_dim, 3, bias=False)
+        self.GCN1 = GraphConvolutionChebychev(input_dim, 30, 5, bias=False)
+        self.GCN2 = GraphConvolutionChebychev(30, 30, 5, bias=False)
+        self.GCN3 = GraphConvolutionChebychev(30, 30, 5, bias=False)
+        self.GCN4 = GraphConvolutionChebychev(30, output_dim, 5, bias=False)
 
     def forward(self, x, adj):
         x = torch.sigmoid(self.GCN1(x, adj))
         # x = self.GCN1(x, adj)
         x = torch.sigmoid(self.GCN2(x, adj))
+        x = torch.sigmoid(self.GCN3(x, adj))
         # x = torch.sigmoid(self.GCN3(x, adj))
-        x = self.GCN3(x, adj)
+        x = self.GCN4(x, adj)
         # x = torch.sigmoid(self.GCN4(x, adj))
         # x = self.GCN4(x, adj)
         x = F.log_softmax(x, dim=1)

@@ -126,3 +126,12 @@ def get_score(predictor: Predictor, x: List[GraphWrapper], y: Dict[str, Dict[Tup
 
     return {k: sum(v) / tot_len * 100 if k in ("no_path", "invalid_path", "total") else sum(v) / len(v) * 100 for k, v
             in acc.items()}
+
+
+def save_on_hdd(x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.Tensor]]):
+    with open("../dataset/gn:{}-dim:{}-dataset-x.pt".format(len(x), x[0].adj.shape[0]),
+              mode='wb') as output:
+        torch.save(x, output)
+    with open("../dataset/gn:{}-dim:{}-dataset-y.pt".format(len(x), x[0].adj.shape[0]),
+              mode='wb') as output:
+        torch.save(y, output)

@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from ray import tune
 
 from G2G.utils import reconstructed_matrix_to_shortest_path, prepare_input, shortest_path_to_adj, adj_to_shortest_path, \
-    get_score
+    get_score, save_on_hdd
 
 
 def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10, iterations: int = 500,
@@ -23,7 +23,8 @@ def find_best_dataset(limit: int = 100, graph_number: int = 100, dim: int = 10, 
     for _ in trange(limit):
         x, y = generate_dataset(graph_number, dim, tqdm_enabled=False)
         config = {"lr": lr, "iterations": iterations}
-        predictor, accuracy, loss_history = train(x, y, config=config, tqdm_enabled=False)
+        predictor = Predictor(10, 10)
+        predictor, accuracy, loss_history = train(predictor, x, y, config=config, tqdm_enabled=False)
 
         if accuracy > cached_max:
             plt.plot(loss_history)
@@ -123,19 +124,20 @@ def send_info(gn, it, limit):
 @logger(Formatter(lambda x: "**Schedule completed**"))
 @timer
 def schedule():
-    it = 100
-    # find_best_dataset(limit=1, graph_number=101, dim=10, iterations=it, lr=0.005, write_hdd=True)
-    x = torch.load(f"../dataset/gn:11-dim:10-iter:{it}-dataset-x.pt")
-    y = torch.load(f"../dataset/gn:11-dim:10-iter:{it}-dataset-y.pt")
-    max_iter = 300
+    gn = 100
+    dim = 10
+    save_on_hdd(*generate_dataset(gn, dim))
+    x = torch.load(f"../dataset/gn:{gn}-dim:{dim}-dataset-x.pt")
+    y = torch.load(f"../dataset/gn:{gn}-dim:{dim}-dataset-y.pt")
+    max_iter = 100
     predictor = Predictor(10, 10)
+    predictor.load_state_dict(torch.load(f"../dataset/gn:{gn}-dim:{dim}-model.pt"))
     predictor, accuracy, loss_history = train(predictor, x, y, {"lr": 0.001, "iterations": max_iter})
     plt.plot(loss_history)
     plt.show()
-    # predictor.load_state_dict(torch.load(f"../dataset/better-trained-gn:10-dim:10-iter:{max_iter}-model.pt"))
     print(get_score(predictor, x, y))
-    # torch.save(predictor.state_dict(), f"../dataset/better-trained-gn:1000-dim:{10}-iter:{max_iter}-model.pt")
-    print(get_score(predictor, *generate_dataset(11, 10)))
+    torch.save(predictor.state_dict(), f"../dataset/gn:{gn}-dim:{dim}-model.pt")
+    print(get_score(predictor, *generate_dataset(gn, 10)))
     return 0
 
 
