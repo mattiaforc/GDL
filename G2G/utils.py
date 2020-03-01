@@ -100,7 +100,7 @@ def is_path_valid(rec, adj):
     return True
 
 
-@logger(Formatter(lambda x: "Scores:\n" + str([str(k) + ":  " + str(v) + "\n" for k, v in x.items()])))
+# @logger(Formatter(lambda x: "Scores:\n" + str([str(k) + ":  " + str(v) + "\n" for k, v in x.items()])))
 def get_score(predictor: Predictor, x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.tensor]]) \
         -> Dict[str, float]:
     acc: Dict[str, List[float]] = {'total': [], 'long': [], 'short': [], 'no_path': [], 'invalid_path': []}

@@ -1,5 +1,4 @@
 import math
-
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -37,7 +36,6 @@ class GraphConvolutionChebychev(nn.Module):
 
         if self.bias is not False:
             out = out + self.bias
-
         return out
 
 
@@ -63,10 +61,10 @@ class Predictor(nn.Module):
         # self.GCN3 = GraphConvolutionLayer(50, 50)
         # self.GCN4 = GraphConvolutionLayer(50, output_dim)
         # self.GCN5 = GraphConvolutionLayer(output_dim, output_dim)
-        self.GCN1 = GraphConvolutionChebychev(input_dim, 30, 5, bias=False)
-        self.GCN2 = GraphConvolutionChebychev(30, 30, 5, bias=False)
-        self.GCN3 = GraphConvolutionChebychev(30, 30, 5, bias=False)
-        self.GCN4 = GraphConvolutionChebychev(30, output_dim, 5, bias=False)
+        self.GCN1 = GraphConvolutionChebychev(input_dim, 50, 3, bias=False)
+        self.GCN2 = GraphConvolutionChebychev(50, 50, 3, bias=False)
+        self.GCN3 = GraphConvolutionChebychev(50, 50, 3, bias=False)
+        self.GCN4 = GraphConvolutionChebychev(50, output_dim, 3, bias=False)
 
     def forward(self, x, adj):
         x = torch.sigmoid(self.GCN1(x, adj))
