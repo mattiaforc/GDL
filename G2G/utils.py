@@ -111,7 +111,8 @@ def get_score(predictor: Predictor, x: List[GraphWrapper], y: Dict[str, Dict[Tup
         for c1, c2 in itertools.combinations(range(1, dim + 1), r=2):
             tot_len += 1
             label = adj_to_shortest_path(y[str(g)][(c1, c2)], c1)
-            rec = reconstructed_matrix_to_shortest_path(predictor(prepare_input(c1, c2, dim, g.adj), g.laplacian), c1,
+            rec = reconstructed_matrix_to_shortest_path(predictor(prepare_input(c1, c2, dim, g.laplacian), g.laplacian),
+                                                        c1,
                                                         c2)
             acc['total'].append(label == rec)
             if len(label) > 2:

@@ -128,14 +128,14 @@ def schedule():
     x = torch.load(f"../dataset/gn:11-dim:10-iter:{it}-dataset-x.pt")
     y = torch.load(f"../dataset/gn:11-dim:10-iter:{it}-dataset-y.pt")
     max_iter = 300
-    predictor, accuracy, loss_history = train(x, y, {"lr": 0.01, "iterations": max_iter})
+    predictor = Predictor(10, 10)
+    predictor, accuracy, loss_history = train(predictor, x, y, {"lr": 0.001, "iterations": max_iter})
     plt.plot(loss_history)
     plt.show()
-    # predictor = Predictor(10, 10)
     # predictor.load_state_dict(torch.load(f"../dataset/better-trained-gn:10-dim:10-iter:{max_iter}-model.pt"))
     print(get_score(predictor, x, y))
     # torch.save(predictor.state_dict(), f"../dataset/better-trained-gn:1000-dim:{10}-iter:{max_iter}-model.pt")
-    print(get_score(predictor, *generate_dataset(1000, 10)))
+    print(get_score(predictor, *generate_dataset(11, 10)))
     return 0
 
 
