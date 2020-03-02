@@ -54,27 +54,27 @@ class GraphConvolutionLayer(nn.Module):
 
 
 class Predictor(nn.Module):
-    def __init__(self, input_dim, output_dim):
+    def __init__(self, input_dim, output_dim, hidden, k, dropout):
         super(Predictor, self).__init__()
         # self.GCN1 = GraphConvolutionLayer(input_dim, 50)
         # self.GCN2 = GraphConvolutionLayer(50, 50)
         # self.GCN3 = GraphConvolutionLayer(50, 50)
         # self.GCN4 = GraphConvolutionLayer(50, output_dim)
         # self.GCN5 = GraphConvolutionLayer(output_dim, output_dim)
-        self.GCN1 = GraphConvolutionChebychev(input_dim, 50, 3, bias=False)
-        self.GCN2 = GraphConvolutionChebychev(50, 50, 3, bias=False)
-        self.GCN3 = GraphConvolutionChebychev(50, 50, 3, bias=False)
-        self.GCN4 = GraphConvolutionChebychev(50, output_dim, 3, bias=False)
+        self.GCN1 = GraphConvolutionChebychev(input_dim, hidden, k, bias=False)
+        self.GCN2 = GraphConvolutionChebychev(hidden, hidden, k, bias=False)
+        self.GCN3 = GraphConvolutionChebychev(hidden, hidden, k, bias=False)
+        self.GCN4 = GraphConvolutionChebychev(hidden, output_dim, k, bias=False)
+        self.dropout = torch.nn.Dropout(p=dropout)
 
     def forward(self, x, adj):
-        x = torch.sigmoid(self.GCN1(x, adj))
-        # x = self.GCN1(x, adj)
-        x = torch.sigmoid(self.GCN2(x, adj))
-        x = torch.sigmoid(self.GCN3(x, adj))
-        # x = torch.sigmoid(self.GCN3(x, adj))
+        x = torch.relu(self.GCN1(x, adj))
+        x = self.dropout(torch.relu(self.GCN2(x, adj)))
+        x = self.dropout(torch.relu(self.GCN3(x, adj)))
+        # x = torch.relu(self.GCN1(x, adj))
+        # x = torch.relu(self.GCN2(x, adj))
+        # x = torch.relu(self.GCN3(x, adj))
         x = self.GCN4(x, adj)
-        # x = torch.sigmoid(self.GCN4(x, adj))
-        # x = self.GCN4(x, adj)
         x = F.log_softmax(x, dim=1)
         return x
 

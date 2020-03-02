@@ -6,30 +6,42 @@ from tqdm import trange
 from G2G.model.graph_wrapper import GraphWrapper
 from G2G.model.model import Predictor
 from G2G.preprocess.generate import generate_dataset
-from G2G.utils import reconstructed_matrix_to_shortest_path, adj_to_shortest_path, get_all_combo, prepare_input, \
-    get_score
+from G2G.utils import get_all_combo, prepare_input, get_score, save_on_hdd
 from G2G.decorators.decorators import logger, Formatter, timer
+import os
 
 
 def train_tune(config: Dict):
-    x = torch.load("/home/malattia/Workspace/Tesi/G2G/dataset/gn:100-dim:10-iter:150-dataset-x.pt")
-    y = torch.load("/home/malattia/Workspace/Tesi/G2G/dataset/gn:100-dim:10-iter:150-dataset-y.pt")
-    return train(predictor, x, y, tqdm_enabled=False, config=config, tune_on=True)
+    gn = config["gn"]
+    dim = config["dim"]
+
+    predictor = Predictor(dim, dim, config['hidden'], config['k'], config['dropout'])
+    max_iter = config["max_iter"]
+
+    x = torch.load(f"/home/malattia/Workspace/Tesi/G2G/dataset/x-gn:{gn}-dim:{dim}-dataset.pt")
+    y = torch.load(f"/home/malattia/Workspace/Tesi/G2G/dataset/y-gn:{gn}-dim:{dim}-dataset.pt")
+    x_val = torch.load(f"/home/malattia/Workspace/Tesi/G2G/dataset/x-val-gn:{gn}-dim:{dim}-dataset.pt")
+    y_val = torch.load(f"/home/malattia/Workspace/Tesi/G2G/dataset/y-val-gn:{gn}-dim:{dim}-dataset.pt")
+    lr = config["lr"]
+
+    return train(predictor, x, y, {"lr": lr, "iterations": max_iter}, tqdm_enabled=False, tune_on=True,
+                 validation_x=x_val, validation_y=y_val)
 
 
-@logger(Formatter(lambda x: "Training results:\nAccuracy: " + str(x[1]) + "\nLast loss: " + str(x[2][-1].item())))
+# @logger(Formatter(lambda x: "Training results:\nAccuracy: " + str(x[1]) + "\nLast loss: " + str(x[2][-1].item())))
 @timer
 def train(predictor: Predictor, x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.Tensor]], config: Dict,
-          tqdm_enabled: bool = True, tune_on: bool = False) -> Tuple[Predictor, float, torch.Tensor]:
-    # config = {iterations: int, lr: float, combo_num: int}
-    assert x != []
-    # predictor: Predictor = Predictor(*x[0].laplacian.shape)
+          validation_x: List[GraphWrapper] = None, validation_y: Dict[str, Dict[Tuple[int, int], torch.Tensor]] = None,
+          tqdm_enabled: bool = True, tune_on: bool = False) \
+        -> Tuple[Predictor, torch.Tensor, Dict[str, float], Dict[str, float]]:
+    # config = {iterations: int, lr: float}
+
     optimizer = optim.Adam(predictor.parameters(), lr=config["lr"])
     custom_range: Iterable = trange(config["iterations"]) if tqdm_enabled else range(config["iterations"])
     loss_history = torch.zeros(config["iterations"])
-
     dim: int = x[0].laplacian.shape[0]
-    combo: List[Tuple[int, int]] = get_all_combo(dim)
+    predictor.train()
+
     for epoch in custom_range:
         for graph in x:
             for c in get_all_combo(dim):
@@ -40,42 +52,12 @@ def train(predictor: Predictor, x: List[GraphWrapper], y: Dict[str, Dict[Tuple[i
                 optimizer.step()
                 loss_history[epoch] += loss.detach().item()
 
-    a = []
-    for g in x:
-        for c in combo:
-            a.append(reconstructed_matrix_to_shortest_path(
-                predictor(prepare_input(c[0], c[1], dim, g.laplacian), g.laplacian).data, c[0],
-                c[1]) == adj_to_shortest_path(y[str(g)][(c[0], c[1])], c[0]))
-    accuracy = sum(a) / len(a) * 100
-    if tune_on: tune.track.log(mean_accuracy=accuracy)
-
-    return predictor, accuracy, loss_history
-
-
-def train_batch(predictor, num_batch: int, graph_per_batch: int, graph_dim: int, iterations: int,
-                validation_x: List[GraphWrapper], validation_y: Dict[str, Dict[Tuple[int, int], torch.Tensor]],
-                lr: float = 0.001, tqdm_enabled: bool = True):
-    optimizer = optim.Adam(predictor.parameters(), lr=lr)
-    batch_range: Iterable = trange(num_batch if tqdm_enabled else range(num_batch))
-    custom_range: Iterable = range(iterations)
-    loss_history = torch.zeros(iterations)
-
-    for batch_num in batch_range:
-        batch_x, batch_y = generate_dataset(graph_per_batch * num_batch, graph_dim, tqdm_enabled=False)
-        for epoch in custom_range:
-            for graph in batch_x[graph_per_batch * batch_num:graph_per_batch * (batch_num + 1):]:
-                for c in get_all_combo(graph_dim):
-                    optimizer.zero_grad()
-                    A_hat = predictor(prepare_input(c[0], c[1], graph_dim, graph.laplacian), graph.laplacian)
-                    loss = predictor.loss(A_hat, batch_y[str(graph)][(c[0], c[1])])
-                    loss.backward()
-                    optimizer.step()
-                    loss_history[epoch] += loss.detach().item()
-
-        print("Score on batch-trained dataset:")
-        print(get_score(predictor, batch_x, batch_y))
-        print("Score on validation dataset:")
-        print(get_score(predictor, validation_x, validation_y))
-
-    loss_history /= graph_per_batch * num_batch
-    return predictor, loss_history
+    predictor.eval()
+    val = get_score(predictor, validation_x,
+                    validation_y) if validation_x is not None and validation_y is not None else None
+    acc = get_score(predictor, x, y)
+    if tune_on and validation_x is not None and validation_y is not None:
+        tune.track.log(mean_accuracy=val['total'])
+        torch.save(predictor.state_dict(),
+                   f"/home/malattia/Workspace/Tesi/G2G/dataset/gn:{len(x)}-dim:{dim}-hidden:{predictor.GCN2.weight.shape[2]}-k:{predictor.GCN2.weight.shape[0]}-model.pt")
+    return predictor, loss_history, acc, val

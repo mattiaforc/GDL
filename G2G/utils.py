@@ -128,10 +128,8 @@ def get_score(predictor: Predictor, x: List[GraphWrapper], y: Dict[str, Dict[Tup
             in acc.items()}
 
 
-def save_on_hdd(x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.Tensor]]):
-    with open("../dataset/gn:{}-dim:{}-dataset-x.pt".format(len(x), x[0].adj.shape[0]),
-              mode='wb') as output:
+def save_on_hdd(x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.Tensor]], path: str, name: str):
+    with open(path + "x-" + name + ".pt", mode='wb') as output:
         torch.save(x, output)
-    with open("../dataset/gn:{}-dim:{}-dataset-y.pt".format(len(x), x[0].adj.shape[0]),
-              mode='wb') as output:
+    with open(path + "y-" + name + ".pt", mode='wb') as output:
         torch.save(y, output)
