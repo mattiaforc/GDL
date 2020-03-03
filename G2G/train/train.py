@@ -5,10 +5,8 @@ from torch import optim
 from tqdm import trange
 from G2G.model.graph_wrapper import GraphWrapper
 from G2G.model.model import Predictor
-from G2G.preprocess.generate import generate_dataset
-from G2G.utils import get_all_combo, prepare_input, get_score, save_on_hdd
+from G2G.utils import get_all_combo, prepare_input, get_score
 from G2G.decorators.decorators import logger, Formatter, timer
-import os
 
 
 def train_tune(config: Dict):
@@ -32,7 +30,7 @@ def train_tune(config: Dict):
 @timer
 def train(predictor: Predictor, x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.Tensor]], config: Dict,
           validation_x: List[GraphWrapper] = None, validation_y: Dict[str, Dict[Tuple[int, int], torch.Tensor]] = None,
-          tqdm_enabled: bool = True, tune_on: bool = False) \
+          checkpoint: int = 0, tqdm_enabled: bool = True, tune_on: bool = False) \
         -> Tuple[Predictor, torch.Tensor, Dict[str, float], Dict[str, float]]:
     # config = {iterations: int, lr: float}
 
@@ -51,13 +49,20 @@ def train(predictor: Predictor, x: List[GraphWrapper], y: Dict[str, Dict[Tuple[i
                 loss.backward()
                 optimizer.step()
                 loss_history[epoch] += loss.detach().item()
+        if checkpoint != 0 and epoch != 0 and epoch % checkpoint == 0:
+            torch.save(predictor.state_dict(),
+                       f"../dataset/model-gn:{len(x)}-dim:{dim}-hidden:{predictor.GCN2.weight.shape[2]}-k:{predictor.GCN2.weight.shape[0]}.pt")
+            print("Score on training set:\n", get_score(predictor, x, y))
+            if validation_x is not None and validation_y is not None:
+                print("Score on validation set:\n", get_score(predictor, validation_x, validation_y))
+            print("Loss: ", loss_history[epoch] / len(x))
 
     predictor.eval()
-    val = get_score(predictor, validation_x,
-                    validation_y) if validation_x is not None and validation_y is not None else None
+    val = get_score(predictor, validation_x, validation_y) \
+        if validation_x is not None and validation_y is not None else None
     acc = get_score(predictor, x, y)
     if tune_on and validation_x is not None and validation_y is not None:
-        tune.track.log(mean_accuracy=val['total'])
+        tune.track.log(mean_accuracy=val['long'])
         torch.save(predictor.state_dict(),
-                   f"/home/malattia/Workspace/Tesi/G2G/dataset/gn:{len(x)}-dim:{dim}-hidden:{predictor.GCN2.weight.shape[2]}-k:{predictor.GCN2.weight.shape[0]}-model.pt")
+                   f"/home/malattia/Workspace/Tesi/G2G/dataset/model-gn:{len(x)}-dim:{dim}-hidden:{predictor.GCN2.weight.shape[2]}-k:{predictor.GCN2.weight.shape[0]}.pt")
     return predictor, loss_history, acc, val
