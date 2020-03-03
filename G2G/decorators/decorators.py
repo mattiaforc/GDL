@@ -25,7 +25,10 @@ def logger(formatter: Formatter):
         @functools.wraps(func)
         def logger_wrapper(*args, **kwargs):
             result = func(*args, **kwargs)
-            bot.send_message(chat_id=CHAT_ID, text=formatter.format(result), parse_mode=formatter.parse_mode)
+            try:
+                bot.send_message(chat_id=CHAT_ID, text=formatter.format(result), parse_mode=formatter.parse_mode)
+            except Exception as e:
+                pass
             return result
 
         return logger_wrapper
