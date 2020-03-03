@@ -6,28 +6,28 @@ from typing import Tuple, List, Dict
 from matplotlib import pyplot as plt
 
 
-def degree_matrix(A: torch.Tensor) -> torch.Tensor:
+def degree_matrix(A: torch.Tensor, device: torch.device) -> torch.Tensor:
     degrees = list(Counter([v.item() for v in torch.nonzero(A, as_tuple=True)[0]]).values())
-    D = torch.zeros_like(A)
+    D = torch.zeros_like(A, device=device)
     for i in range(A.shape[0]):
         D[i, i] = degrees[i]
     return D
 
 
-def laplacian(A: torch.Tensor) -> torch.Tensor:
+def laplacian(A: torch.Tensor, device: torch.device) -> torch.Tensor:
     # I + D **-1/2 A D ** -1/2 -> D (of this A) ** -1/2 (A + I) D (of this A) ** -1/2
-    A = A + torch.eye(A.shape[0])
-    D = degree_matrix(A)
-    D = torch.where(D != 0, D.pow(-1 / 2), torch.tensor(0.))
+    A = A + torch.eye(A.shape[0], device=device)
+    D = degree_matrix(A, device=device)
+    D = torch.where(D != 0, D.pow(-1 / 2), torch.tensor(0., device=device))
     L = torch.mm(D, torch.mm(A, D))
     assert True not in torch.isnan(L)
     return L
 
 
 class GraphWrapper:
-    def __init__(self, adj: torch.Tensor, pos=None):
+    def __init__(self, adj: torch.Tensor, device: torch.device, pos=None):
         self.adj = adj
-        self.laplacian = laplacian(adj)
+        self.laplacian = laplacian(adj, device=device)
         edges, self.labels = get_labeled_edges(self.adj)
         self.graph = nx.Graph()
         self.graph.add_edges_from(edges)

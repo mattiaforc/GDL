@@ -39,11 +39,11 @@ def reconstructed_matrix_to_shortest_path(a: torch.Tensor, start: int, end: int)
     return m
 
 
-def shortest_as_adj_from_graph_wrapper(g: GraphWrapper, start: int, end: int) -> torch.Tensor:
-    A = torch.zeros(g.adj.shape)
+def shortest_as_adj_from_graph_wrapper(g: GraphWrapper, start: int, end: int, device: torch.device) -> torch.Tensor:
+    A = torch.zeros(g.adj.shape, device=device)
     try:
         shortest_path = nx.shortest_path(g.graph, start, end, weight="weight")
-        A = shortest_path_to_adj(shortest_path, g.adj.shape[0])
+        A = shortest_path_to_adj(shortest_path, g.adj.shape[0], device=device)
     except (nx.NetworkXNoPath, nx.NodeNotFound):
         pass
     return A
@@ -57,8 +57,8 @@ def adj_to_shortest_path(A: torch.Tensor, start_node: int) -> List[int]:
     return r
 
 
-def shortest_path_to_adj(l: List[int], dim: int):
-    A = torch.zeros((dim, dim))
+def shortest_path_to_adj(l: List[int], dim: int, device: torch.device):
+    A = torch.zeros((dim, dim), device=device)
     for s, e in zip(l, l[1:]):
         A[s - 1][e - 1] = 1
     return A
@@ -84,8 +84,8 @@ def get_combo(max: int, num: int) -> Tuple[int, int]:
         yield start, end
 
 
-def prepare_input(start: int, end: int, dim: int, adj) -> torch.Tensor:
-    temp = torch.zeros(*(dim, dim))
+def prepare_input(start: int, end: int, dim: int, adj, device: torch.device) -> torch.Tensor:
+    temp = torch.zeros(*(dim, dim), device=device)
     # temp[start - 1, end - 1] += 1
     # temp[start - 1] = torch.tensor([1.] * dim)
     # temp[:, end - 1] = torch.tensor([1.])
@@ -101,7 +101,8 @@ def is_path_valid(rec, adj):
 
 
 # @logger(Formatter(lambda x: "Scores:\n" + str([str(k) + ":  " + str(v) + "\n" for k, v in x.items()])))
-def get_score(predictor: Predictor, x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.tensor]]) \
+def get_score(predictor: Predictor, x: List[GraphWrapper], y: Dict[str, Dict[Tuple[int, int], torch.tensor]],
+              device: torch.device) \
         -> Dict[str, float]:
     acc: Dict[str, List[float]] = {'total': [], 'long': [], 'short': [], 'no_path': [], 'invalid_path': []}
     dim = x[0].adj.shape[0]
@@ -111,9 +112,8 @@ def get_score(predictor: Predictor, x: List[GraphWrapper], y: Dict[str, Dict[Tup
         for c1, c2 in itertools.combinations(range(1, dim + 1), r=2):
             tot_len += 1
             label = adj_to_shortest_path(y[str(g)][(c1, c2)], c1)
-            rec = reconstructed_matrix_to_shortest_path(predictor(prepare_input(c1, c2, dim, g.laplacian), g.laplacian),
-                                                        c1,
-                                                        c2)
+            rec = reconstructed_matrix_to_shortest_path(
+                predictor(prepare_input(c1, c2, dim, g.laplacian, device=device), g.laplacian), c1, c2)
             acc['total'].append(label == rec)
             if len(label) > 2:
                 acc['long'].append(label == rec)

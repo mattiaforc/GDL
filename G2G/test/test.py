@@ -103,7 +103,28 @@ def schedule():
     return 0
 
 
+def test_device():
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
+    else:
+        device = torch.device('cpu')
+    print("Device is: " + str(device))
+    x, y = generate_dataset(1000, 10, device)
+    print(x[0].adj.device, x[0].laplacian.device, y[str(x[0])][(1, 3)].device, sep="\n")
+    predictor = Predictor(10, 10, 10, 1, 0.2)
+    predictor, loss_history, acc, val = train(predictor, x, y, {"lr": 0.0001, "iterations": 5}, device,
+                                              tqdm_enabled=True)
+    device = torch.device('cpu')
+    print("Device is: " + str(device))
+    x, y = generate_dataset(1000, 10, device)
+    print(x[0].adj.device, x[0].laplacian.device, y[str(x[0])][(1, 3)].device, sep="\n")
+    predictor = Predictor(10, 10, 10, 1, 0.2)
+    predictor, loss_history, acc, val = train(predictor, x, y, {"lr": 0.0001, "iterations": 5}, device,
+                                              tqdm_enabled=True)
+
+
 if __name__ == "__main__":
     torch.manual_seed(0)
-    schedule()
+    # schedule()
     # ray_schedule()
+    test_device()
